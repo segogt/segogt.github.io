@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+
+    <title>linux堆笔记(一)——堆相关的数据结构 | sakai&#39;s blog</title>
+    <meta property="og:title" content="linux堆笔记(一)——堆相关的数据结构 - sakai&#39;s blog">
+    <meta property="og:type" content="article">
+        
+    <meta property="article:published_time" content='2020-01-11T22:44:20&#43;08:00'>
+        
+        
+    <meta property="article:modified_time" content='2020-01-11T22:44:20&#43;08:00'>
+        
+    <meta name="Keywords" content="web,java,python,CTF,内网">
+    <meta name="description" content="linux堆笔记(一)——堆相关的数据结构">
+        
+    <meta name="author" content="sakai">
+    <meta property="og:url" content="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">
+    <link rel="shortcut icon" href='/favicon.ico'  type="image/x-icon">
+
+    <link rel="stylesheet" href='/css/normalize.css'>
+    <link rel="stylesheet" href='/css/style.css'>
+    <script type="text/javascript" src="//cdn.bootcdn.net/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    
+    
+    
+        <link href="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" rel="stylesheet">
+    
+    
+    
+    
+</head>
+
+
+<body>
+    <header id="header" class="clearfix">
+    <div class="container">
+        <div class="col-group">
+            <div class="site-name ">
+                
+                    <a id="logo" href="http://segogt.github.io/">
+                        sakai&#39;s blog
+                    </a>
+                
+                <p class="description">web/java/python/CTF</p>
+            </div>
+            <div>
+                <nav id="nav-menu" class="clearfix">
+                    <a class="current" href="http://segogt.github.io/">首页</a>
+                    
+                    <a  href="http://segogt.github.io/archives/" title="归档">归档</a>
+                    
+                    <a  href="http://segogt.github.io/about/" title="关于">关于</a>
+                    
+                </nav>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <div id="body">
+        <div class="container">
+            <div class="col-group">
+
+                <div class="col-8" id="main">
+                    
+<div class="res-cons">
+    <style type="text/css">
+    .post-toc {
+        position: fixed;
+        width: 200px;
+        margin-left: -210px;
+        padding: 5px 10px;
+        font-family: Athelas, STHeiti, Microsoft Yahei, serif;
+        font-size: 12px;
+        border: 1px solid rgba(0, 0, 0, .07);
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.98);
+        background-clip: padding-box;
+        -webkit-box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        word-wrap: break-word;
+        white-space: nowrap;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        z-index: 999;
+        cursor: pointer;
+        max-height: 70%;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .post-toc .post-toc-title {
+        width: 100%;
+        margin: 0 auto;
+        font-size: 20px;
+        font-weight: 400;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .post-toc .post-toc-content {
+        font-size: 15px;
+    }
+
+    .post-toc .post-toc-content>nav>ul {
+        margin: 10px 0;
+    }
+
+    .post-toc .post-toc-content ul {
+        padding-left: 20px;
+        list-style: square;
+        margin: 0.5em;
+        line-height: 1.8em;
+    }
+
+    .post-toc .post-toc-content ul ul {
+        padding-left: 15px;
+        display: none;
+    }
+
+    @media print,
+    screen and (max-width:1057px) {
+        .post-toc {
+            display: none;
+        }
+    }
+</style>
+<div class="post-toc" style="position: absolute; top: 188px;">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#堆的基本操作">堆的基本操作</a>
+      <ul>
+        <li><a href="#mallocsize_t-n">malloc(size_t n)</a></li>
+        <li><a href="#freevoid-p">free(void* p)</a></li>
+      </ul>
+    </li>
+    <li><a href="#内核中各模块的空间分布图">内核中各模块的空间分布图</a>
+      <ul>
+        <li><a href="#32系统中的空间分布图如下">32系统中的空间分布图如下:</a></li>
+        <li><a href="#64位如下">64位如下</a></li>
+      </ul>
+    </li>
+    <li><a href="#堆的数据结构">堆的数据结构</a>
+      <ul>
+        <li><a href="#chunk">chunk</a></li>
+        <li><a href="#对chunk结构的解释">对chunk结构的解释</a></li>
+        <li><a href="#chunk结构总结">chunk结构总结</a></li>
+        <li><a href="#与chunk相关的宏定义">与chunk相关的宏定义</a></li>
+      </ul>
+    </li>
+    <li><a href="#bin">bin</a>
+      <ul>
+        <li><a href="#fastbins">fastbins</a></li>
+        <li><a href="#unsorted-bin">unsorted bin</a></li>
+        <li><a href="#small-bin">small bin</a></li>
+        <li><a href="#large-bin">large bin</a></li>
+        <li><a href="#4种bin的总结">4种bin的总结</a></li>
+      </ul>
+    </li>
+    <li><a href="#top-chunk">Top Chunk</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var postToc = $(".post-toc");
+        if (postToc.length) {
+            var leftPos = $("#main").offset().left;
+            if(leftPos<220){
+                postToc.css({"width":leftPos-10,"margin-left":(0-leftPos)})
+            }
+
+            var t = postToc.offset().top - 20,
+                a = {
+                    start: {
+                        position: "absolute",
+                        top: t
+                    },
+                    process: {
+                        position: "fixed",
+                        top: 20
+                    },
+                };
+            $(window).scroll(function () {
+                var e = $(window).scrollTop();
+                e < t ? postToc.css(a.start) : postToc.css(a.process)
+            })
+        }
+    })
+</script>
+    <article class="post">
+        <header>
+            <h1 class="post-title">linux堆笔记(一)——堆相关的数据结构</h1>
+        </header>
+        <date class="post-meta meta-date">
+            2020年1月11日
+        </date>
+        
+        <div class="post-meta">
+            <span>|</span>
+            
+            <span class="meta-category"><a href='/categories/ctf'>ctf</a></span>
+            
+            <span class="meta-category"><a href='/categories/pwn'>pwn</a></span>
+            
+        </div>
+        
+        
+        
+        <div class="clear" style="display: none">
+            <div class="toc-article">
+                <div class="toc-title">文章目录</div>
+            </div>
+        </div>
+        
+        <div class="post-content">
+            <blockquote>
+<p>看了ctfwiki上堆相关的部分内容所写笔记。</p>
+</blockquote>
+<h2 id="堆的基本操作">堆的基本操作</h2>
+<h3 id="mallocsize_t-n">malloc(size_t n)</h3>
+<ul>
+<li>size_t在32位系统下是4字节，在64位系统上是8字节，size_t是无符号的，所以如果传入一个负数会得到一个很大的数字</li>
+<li>当malloc(0)的时候，malloc返回一个最小快，这个块的大小在
+<ul>
+<li>32位系统上是16bytes</li>
+<li>64位系统上是24或32bytes</li>
+</ul>
+</li>
+</ul>
+<h3 id="freevoid-p">free(void* p)</h3>
+<ul>
+<li>当p为空指针时，free不执行任何操作</li>
+<li>当p已经被释放后再次被释放则会出现问题(double free)。</li>
+</ul>
+<h2 id="内核中各模块的空间分布图">内核中各模块的空间分布图</h2>
+<h3 id="32系统中的空间分布图如下">32系统中的空间分布图如下:</h3>
+<p>
+        <a data-fancybox="gallery" href="https://i.loli.net/2020/01/11/ALBGDg17EySIQdb.png">
+            <img class="mx-auto" alt="image.png" src="https://i.loli.net/2020/01/11/ALBGDg17EySIQdb.png" />
+        </a>
+    </p>
+<blockquote>
+<p>32位解释一下:<br>
+0x00000000-0xc0000000是供各个进程使用，称为用户空间，而0xc0000000-0xffffffff是kernel space也就是内核空间，用户无法访问。因为每个进程可以通过系统调用进入内核，因此，Linux内核由系统内的所有进程共享。</p>
+</blockquote>
+<h3 id="64位如下">64位如下</h3>
+<p>
+        <a data-fancybox="gallery" href="https://i.loli.net/2020/01/11/w8oWXVndRjrsUbZ.png">
+            <img class="mx-auto" alt="分布图" src="https://i.loli.net/2020/01/11/w8oWXVndRjrsUbZ.png" />
+        </a>
+    </p>
+<h2 id="堆的数据结构">堆的数据结构</h2>
+<h3 id="chunk">chunk</h3>
+<p>由malloc函数申请的内存为chunk,chunk的结构都是相同的，只不过根据自己是否被释放，它们的表现形式有所不同</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/*
+</span><span style="color:#75715e">  This struct declaration is misleading (but accurate and necessary).
+</span><span style="color:#75715e">  It declares a &#34;view&#34; into memory allowing access to necessary
+</span><span style="color:#75715e">  fields at known offsets from a given base. See explanation below.
+</span><span style="color:#75715e">*/</span>
+<span style="color:#66d9ef">struct</span> malloc_chunk {
+
+  INTERNAL_SIZE_T      prev_size;  <span style="color:#75715e">/* Size of previous chunk (if free).  */</span>
+  INTERNAL_SIZE_T      size;       <span style="color:#75715e">/* Size in bytes, including overhead. */</span>
+
+  <span style="color:#66d9ef">struct</span> malloc_chunk<span style="color:#f92672">*</span> fd;         <span style="color:#75715e">/* double links -- used only if free. */</span>
+  <span style="color:#66d9ef">struct</span> malloc_chunk<span style="color:#f92672">*</span> bk;
+
+  <span style="color:#75715e">/* Only used for large blocks: pointer to next larger size.  */</span>
+  <span style="color:#66d9ef">struct</span> malloc_chunk<span style="color:#f92672">*</span> fd_nextsize; <span style="color:#75715e">/* double links -- used only if free. */</span>
+  <span style="color:#66d9ef">struct</span> malloc_chunk<span style="color:#f92672">*</span> bk_nextsize;
+};
+</code></pre></div><h3 id="对chunk结构的解释">对chunk结构的解释</h3>
+<ul>
+<li>
+<p><code>struct malloc_chunk*</code>是定义指针，定义的变量大小在32位系统占4个字节，在64位占8个字节。</p>
+</li>
+<li>
+<p>INTERNAL_SIZE_T:被定义为size_t,在32位系统上是32位无符号整数(4bytes)，在64位系统上是64位无符号整数(8bytes)</p>
+</li>
+<li>
+<p>prev_size:前一个chunk空闲则记录了前一个chunk的大小，如果前一个chunk不空闲，那么这里存储的就是前一个chunk最后的数据.</p>
+</li>
+</ul>
+<blockquote>
+<p>这里的前一个chunk指<strong>较低地址的</strong>的chunk</p>
+</blockquote>
+<blockquote>
+<p>prev_size如何得到前一个chunk的大小呢?<br>
+用当前chunk的地址指针减去前一个地址指针值就得到了。</p>
+</blockquote>
+<ul>
+<li>size:当前chunk的大小，chunk的大小必须是2*SIZE_SZ的整数倍，如果不满足会被强制转换为2*SIZE_SZ的整数倍。</li>
+</ul>
+<blockquote>
+<ol>
+<li>SIZE_SZ的定义:<br>
+<code>#define SIZE_SZ (sizeof (INTERNAL_SIZE_T))</code><br>
+也就是说，SIZE_SZ在32位系统下是4个字节大小，在64位系统下是8个字节大小</li>
+<li>接上面，由于每个chunk的大小必须是2*SIZE_SZ的整数倍，所以在32位系统下最小的chunk是16个字节大小，64位系统下最小的chunk是24个字节或32个字节大小。8个字节=&gt;8的整数倍是的用二进制表示是 1000*n，所以低三位始终为0，对堆块大小没影响。于是设计人员选择拿低三位当标志位使用，从高到低分别表示:</li>
+</ol>
+<blockquote>
+<ul>
+<li>NON_MAIN_ARENA:记录当前chunk是否不属于主线程，1代表不属于，0代表属于</li>
+<li>IS_MAPPED:记录当前chunk是否由mmap分配</li>
+<li>PREV_INUSE:记录前一个chunk块是否被分配，1代表被分配，0代表没有被分配。当一个 chunk 的 size 的 P 位为 0 时，说明前一个chunk空闲，我们能通过 prev_size 字段来获取上一个 chunk 的大小以及地址。这也方便进行空闲 chunk 之间的合并。</li>
+</ul>
+<blockquote>
+<p>堆中第一个被分配的chunk的size字段的PREV_INUSE都会被置为1，以便于禁止访问前面的非法内存</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>
+<p>fd、bk</p>
+<ul>
+<li>chunk被分配后从fd开始是用户的数据</li>
+<li>chunk未被分配时
+<ul>
+<li>fd指向前一个空闲chunk（指链表中的前一个，物理地址可能不相邻）</li>
+<li>bk指向后一个空闲chunk</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>fd_nextsize， bk_nextsize<br>
+只有在chunk空闲时才是用，只用于large chunk</p>
+<ul>
+<li>fd_nextsize:指向前一个与当前chunk大小不同的第一个空闲块，不包含 bin 的头指针。</li>
+<li>bk_nextsize 指向后一个与当前 chunk 大小不同的第一个空闲块，不包含 bin 的头指针。</li>
+<li>一般空闲的 large chunk 在 fd 的遍历顺序中，按照由大到小的顺序排列。这样做可以避免在寻找合适 chunk 时挨个遍历。</li>
+</ul>
+</li>
+</ul>
+<h3 id="chunk结构总结">chunk结构总结</h3>
+<ul>
+<li>在分配状态时，只有前2个字段和user data内容</li>
+<li>在空闲时chunk放到空闲链表中，才有了fd、bk等内容</li>
+<li>fd_nextsize和bk_nextsize只有在large chunk时才需要考虑</li>
+</ul>
+<h3 id="与chunk相关的宏定义">与chunk相关的宏定义</h3>
+<h4 id="chunk-与-mem-指针头部的转换">chunk 与 mem 指针头部的转换</h4>
+<p>chunk指的是chunk的首地址，mem指的是用户数据的首地址，中间差了一个chunk header（也就是PREV_SIZE和SIZE，大小是2*SIZE_SZ）</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/* conversion from malloc headers to user pointers, and back */</span>
+<span style="color:#75715e">#define chunk2mem(p) ((void *) ((char *) (p) + 2 * SIZE_SZ))
+</span><span style="color:#75715e">#define mem2chunk(mem) ((mchunkptr)((char *) (mem) -2 * SIZE_SZ))
+</span></code></pre></div><h4 id="最小chunk的大小">最小chunk的大小</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">/* The smallest possible chunk */</span>
+<span style="color:#75715e">#define MIN_CHUNK_SIZE (offsetof(struct malloc_chunk, fd_nextsize))
+</span></code></pre></div><p>这里求了chunk结构体开头到fd_nextsize的偏移，也就是说，最小chunk包含2个INTERNAL_SIZE_T和2个struct malloc_chunk*，一共4*SIZE_SZ，所以32位占16字节大小，64位占32字节大小，用代码测试一下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdlib.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+{
+    <span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> p1,<span style="color:#f92672">*</span>p2,<span style="color:#f92672">*</span>p3,<span style="color:#f92672">*</span>p4;
+    p1<span style="color:#f92672">=</span>malloc(<span style="color:#ae81ff">0</span>);
+    p2<span style="color:#f92672">=</span>malloc(<span style="color:#ae81ff">0</span>);
+    p3<span style="color:#f92672">=</span>malloc(<span style="color:#ae81ff">0</span>);
+    p4<span style="color:#f92672">=</span>malloc(<span style="color:#ae81ff">0</span>);
+    <span style="color:#66d9ef">int</span> a;
+    printf(<span style="color:#e6db74">&#34;%p</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,p1);
+    printf(<span style="color:#e6db74">&#34;%p</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,p2);
+    printf(<span style="color:#e6db74">&#34;%p</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,p3);
+    printf(<span style="color:#e6db74">&#34;%p</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,p4);
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>32位运行结果</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">0x883b008
+0x883b018
+0x883b028
+0x883b038
+</code></pre></div><p>说明32位下最小的chunk大小是16字节
+64位运行结果是</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#ae81ff">0x1c14010</span>
+<span style="color:#ae81ff">0x1c14030</span>
+<span style="color:#ae81ff">0x1c14050</span>
+<span style="color:#ae81ff">0x1c14070</span>
+</code></pre></div><p>说明64位最小的chunk大小是0x20也就是32个字节</p>
+<h4 id="获取-chunk-size">获取 chunk size</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#define SIZE_BITS (PREV_INUSE | IS_MMAPPED | NON_MAIN_ARENA)
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">/* Get size, ignoring use bits */</span>
+<span style="color:#75715e">#define chunksize(p) (chunksize_nomask(p) &amp; ~(SIZE_BITS))
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">/* Like chunksize, but do not mask SIZE_BITS.  */</span>
+<span style="color:#75715e">#define chunksize_nomask(p) ((p)-&gt;mchunk_size)
+</span></code></pre></div><p>也就是取结构体中的size然后与上0b000，把低三位清0</p>
+<h2 id="bin">bin</h2>
+<p>ptmalloc把空闲的堆分成四种，分别是fast bins，small bins，large bins，unsorted bin<br>
+相似大小的 chunk 会用双向链表链接起来。也就是说，在每类 bin 的内部仍然会有多个互不相关的链表来保存不同大小的 chunk。<br>
+对于 small bins，large bins，unsorted bin 来说，ptmalloc 将它们维护在同一个数组中。这些 bin 对应的数据结构在 malloc_state 中，如下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-C" data-lang="C"><span style="color:#75715e">#define NBINS 128
+</span><span style="color:#75715e"></span><span style="color:#75715e">/* Normal bins packed as described above */</span>
+mchunkptr bins[ NBINS <span style="color:#f92672">*</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span> ];
+</code></pre></div><p>
+        <a data-fancybox="gallery" href="https://image.3001.net/images/20160525/14641459166101.png!small">
+            <img class="mx-auto" alt="结构图" src="https://image.3001.net/images/20160525/14641459166101.png!small" />
+        </a>
+    
+
+        <a data-fancybox="gallery" href="https://i.loli.net/2020/01/11/uU64lgNMhJmHtA3.png">
+            <img class="mx-auto" alt="image.png" src="https://i.loli.net/2020/01/11/uU64lgNMhJmHtA3.png" />
+        </a>
+    
+按顺序依次是:</p>
+<ol>
+<li>索引为1处是unsorted bin，存储的chunk没有排序</li>
+<li>索引从2到63的bin称为small bin,同一个 small bin 链表中的 chunk 的大小相同。两个相邻索引的 small bin 链表中的 chunk 大小相差的字节数为 2 个机器字长，即 32 位相差 8 字节，64 位相差 16 字节。</li>
+<li>small bins 后面的 bin 被称作 large bins，索引为64到126。large bins 中的每一个 bin 都包含一定范围内的 chunk，其中的 chunk 按 fd 指针的顺序从大到小排列。相同大小的 chunk 同样按照最近使用顺序排列。</li>
+<li>fastbins单独记录在一个fastbinsY数组中，个数为10，chunk size为16到80字节的chunk就叫做fast chunk</li>
+</ol>
+<h3 id="fastbins">fastbins</h3>
+<p>
+        <a data-fancybox="gallery" href="https://i.loli.net/2020/01/11/goGCN1qBOhkPXta.png">
+            <img class="mx-auto" alt="image.png" src="https://i.loli.net/2020/01/11/goGCN1qBOhkPXta.png" />
+        </a>
+    </p>
+<ol>
+<li>使用LIFO(后入先出)算法，添加操作(free内存)就是将新的fast chunk加入链表尾，删除操作(malloc内存)就是将链表尾部的fast chunk删除。</li>
+<li>chunk size：10个fast bin中所包含的fast chunk size是按照步进8字节排列的，即第一个fast bin中所有fast chunk size均为16字节，第二个fast bin中为24字节，依次类推。在进行malloc初始化的时候，最大的fast chunk size被设置为80字节(chunk unused size为64字节)，因此默认情况下大小为16到80字节的chunk被分类到fast chunk</li>
+<li>不会对free chunk进行合并操作。鉴于设计fast bin的初衷就是进行快速的小内存分配和释放，因此系统将属于fast bin的chunk的P(未使用标志位)总是设置为1，这样即使当fast bin中有某个chunk同一个free chunk相邻的时候，系统也不会进行自动合并操作，而是保留两者。虽然这样做可能会造成额外的碎片化问题，但瑕不掩瑜。</li>
+<li>malloc(fast chunk)操作：即用户通过malloc请求的大小属于fast chunk的大小范围(注意：用户请求size加上16字节就是实际内存chunk size)。在初始化的时候fast bin支持的最大内存大小以及所有fast bin链表都是空的，所以当最开始使用malloc申请内存的时候，即使申请的内存大小属于fast chunk的内存大小(即16到80字节)，它也不会交由fast bin来处理，而是向下传递交由small bin来处理，如果small bin也为空的话就交给unsorted bin处理：</li>
+<li>free(fast chunk)操作：这个操作很简单，主要分为两步：先通过chunksize函数根据传入的地址指针获取该指针对应的chunk的大小；然后根据这个chunk大小获取该chunk所属的fast bin，然后再将此chunk添加到该fast bin的链尾即可。整个操作都是在_int_free函数中完成。</li>
+</ol>
+<h3 id="unsorted-bin">unsorted bin</h3>
+<p>当释放较小或较大的chunk的时候，如果系统没有将它们添加到对应的bins中，系统就将这些chunk添加到unsorted bin中。</p>
+<ol>
+<li>unsorted bin的个数： 1个。unsorted bin是一个由free chunks组成的循环双链表。</li>
+<li>Chunk size: 在unsorted bin中，对chunk的大小并没有限制，任何大小的chunk都可以归属到unsorted bin中。这就是前言说的特例了，不过特例并非仅仅这一个，后文会介绍。</li>
+</ol>
+<h3 id="small-bin">small bin</h3>
+<ol>
+<li>chunk size:从16到504字节(64位系统的话是从32字节到1008字节)</li>
+<li>free(small chunk)：当释放small chunk的时候，先检查该chunk相邻的chunk是否为free，如果是的话就进行合并操作：将这些chunks合并成新的chunk，然后将它们从small bin中移除，最后将新的chunk添加到unsorted bin中</li>
+</ol>
+<h3 id="large-bin">large bin</h3>
+<ol>
+<li>一是同一个large bin中每个chunk的大小可以不一样，但必须处于某个给定的范围(特例2) ；二是large chunk可以添加、删除在large bin的任何一个位置</li>
+<li>在这63个large bins中，前32个large bin依次以64字节步长为间隔，即第一个large bin中chunk size为512~575字节，第二个large bin中chunk size为576 ~ 639字节。紧随其后的16个large bin依次以512字节步长为间隔；之后的8个bin以步长4096为间隔；再之后的4个bin以32768字节为间隔；之后的2个bin以262144字节为间隔；剩下的chunk就放在最后一个large bin中。如下表所示。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>组</th>
+<th>数量</th>
+<th>公差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>32</td>
+<td>64B</td>
+</tr>
+<tr>
+<td>2</td>
+<td>16</td>
+<td>512B</td>
+</tr>
+<tr>
+<td>3</td>
+<td>8</td>
+<td>4096B</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td>32768B</td>
+</tr>
+<tr>
+<td>5</td>
+<td>2</td>
+<td>262144B</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td>不限制</td>
+</tr>
+</tbody>
+</table>
+<ol start="3">
+<li>free和合并操作：类似于small bin。</li>
+<li>malloc操作：初始化完成之前的操作类似于small bin，这里主要讨论large bins初始化完成之后的操作。首先确定用户请求的大小属于哪一个large bin，然后判断该large bin中最大的chunk的size是否大于用户请求的size(只需要对比链表中front end的size即可)。如果大于，就从rear end开始遍历该large bin，找到第一个size相等或接近的chunk，分配给用户。如果该chunk大于用户请求的size的话，就将该chunk拆分为两个chunk：前者返回给用户，且size等同于用户请求的size；剩余的部分做为一个新的chunk添加到unsorted bin中。</li>
+</ol>
+<h3 id="4种bin的总结">4种bin的总结</h3>
+<p>
+        <a data-fancybox="gallery" href="https://i.loli.net/2020/01/11/N7kwxjZlHPK5g8E.png">
+            <img class="mx-auto" alt="image.png" src="https://i.loli.net/2020/01/11/N7kwxjZlHPK5g8E.png" />
+        </a>
+    </p>
+<h2 id="top-chunk">Top Chunk</h2>
+<ol>
+<li>只有当其他的chunk都不合适的时候，才会用它</li>
+<li>如果它非常大的话，释放后会返还给操作系统</li>
+<li>top chunk 就是处于当前堆的物理地址最高的chunk</li>
+<li>top chunk 的 prev_inuse 比特位始终为 1，否则其前面的 chunk 就会被合并到 top chunk 中</li>
+<li>初始情况下，我们可以将 unsorted chunk 作为 top chunk</li>
+</ol>
+
+        </div>
+
+        
+<div class="post-archive">
+    <ul class="post-copyright">
+        <li><strong>原文作者：</strong><a rel="author" href="http://segogt.github.io/">sakai</a></li>
+        <li style="word-break:break-all"><strong>原文链接：</strong><a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</a></li>
+        <li><strong>版权声明：</strong>本作品采用<a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a>进行许可，非商业转载请注明出处（作者，原文链接），商业转载请联系作者获得授权。</li>
+    </ul>
+</div>
+<br/>
+
+
+
+        
+
+<div class="post-archive">
+    <h2>See Also</h2>
+    <ul class="listing">
+        
+        <li><a href="/archives/">归档</a></li>
+        
+        <li><a href="/search/">搜索</a></li>
+        
+    </ul>
+</div>
+
+
+        <div class="post-meta meta-tags">
+            
+            <ul class="clearfix">
+                
+                <li><a href='/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%9B%B8%E5%85%B3'>内存分配相关</a></li>
+                
+            </ul>
+            
+        </div>
+    </article>
+    
+    
+
+    
+    
+    <div class="post bg-white">
+      <script src="https://utteranc.es/client.js"
+            repo= "segogt/blog-comments"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+      </script>
+    </div>
+    
+</div>
+
+                    <footer id="footer">
+    <div>
+        &copy; 2021 <a href="http://segogt.github.io/">sakai&#39;s blog By sakai</a>
+        
+    </div>
+    <br />
+    <div>
+        <div class="github-badge">
+            <a href="https://gohugo.io/" target="_black" rel="nofollow"><span class="badge-subject">Powered by</span><span class="badge-value bg-blue">Hugo</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://www.flysnow.org/" target="_black"><span class="badge-subject">Design by</span><span class="badge-value bg-brightgreen">飞雪无情</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://github.com/flysnow-org/maupassant-hugo" target="_black"><span class="badge-subject">Theme</span><span class="badge-value bg-yellowgreen">Maupassant</span></a>
+        </div>
+    </div>
+</footer>
+
+
+    
+    <script type="text/javascript">
+        window.MathJax = {
+            tex2jax: {
+                inlineMath: [['$', '$']],
+                processEscapes: true
+                }
+            };
+    </script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script><script src="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+
+<a id="rocket" href="#top"></a>
+<script type="text/javascript" src='/js/totop.js?v=0.0.0' async=""></script>
+
+
+
+
+
+
+                </div>
+
+                <div id="secondary">
+    <section class="widget">
+        <form id="search" action='http://segogt.github.io/search/' method="get" accept-charset="utf-8" target="_blank" _lpchecked="1">
+      
+      <input type="text" name="q" maxlength="20" placeholder="Search">
+      <input type="hidden" name="sitesearch" value="http://segogt.github.io/">
+      <button type="submit" class="submit icon-search"></button>
+</form>
+    </section>
+    
+    <section class="widget">
+        <h3 class="widget-title">最近文章</h3>
+<ul class="widget-list">
+    
+    <li>
+        <a href="http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/" title="Nodejs中代码执行绕过的一些技巧">Nodejs中代码执行绕过的一些技巧</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/" title="diceCTF2020 Web题解">diceCTF2020 Web题解</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/" title="文件描述符、重定向与反弹shell">文件描述符、重定向与反弹shell</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/" title="ubuntu18.04 编译glibc-2.23">ubuntu18.04 编译glibc-2.23</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/" title="linux堆笔记(二)——堆相关的数据操作">linux堆笔记(二)——堆相关的数据操作</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" title="linux堆笔记(一)——堆相关的数据结构">linux堆笔记(一)——堆相关的数据结构</a>
+    </li>
+    
+</ul>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/categories/'>分类</a></h3>
+<ul class="widget-list">
+    
+    <li><a href="http://segogt.github.io/categories/ctf/">ctf (4)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/pwn/">pwn (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/web/">web (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/%E6%99%AE%E9%80%9A%E7%9A%84linux%E7%9F%A5%E8%AF%86/">普通的linux知识 (2)</a></li>
+    
+</ul>
+    </section>
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/tags/'>标签</a></h3>
+<div class="tagcloud">
+    
+    <a href="http://segogt.github.io/tags/ctf%E9%A2%98%E8%A7%A3/">ctf题解</a>
+    
+    <a href="http://segogt.github.io/tags/linux/">linux</a>
+    
+    <a href="http://segogt.github.io/tags/nodejs/">nodejs</a>
+    
+    <a href="http://segogt.github.io/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%9B%B8%E5%85%B3/">内存分配相关</a>
+    
+</div>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title">其它</h3>
+        <ul class="widget-list">
+            <li><a href="http://segogt.github.io/index.xml">文章 RSS</a></li>
+        </ul>
+    </section>
+</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

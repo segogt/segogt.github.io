@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+
+    <title>linux堆笔记(二)——堆相关的数据操作 | sakai&#39;s blog</title>
+    <meta property="og:title" content="linux堆笔记(二)——堆相关的数据操作 - sakai&#39;s blog">
+    <meta property="og:type" content="article">
+        
+    <meta property="article:published_time" content='2020-01-20T11:33:58&#43;08:00'>
+        
+        
+    <meta property="article:modified_time" content='2020-01-20T11:33:58&#43;08:00'>
+        
+    <meta name="Keywords" content="web,java,python,CTF,内网">
+    <meta name="description" content="linux堆笔记(二)——堆相关的数据操作">
+        
+    <meta name="author" content="sakai">
+    <meta property="og:url" content="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/">
+    <link rel="shortcut icon" href='/favicon.ico'  type="image/x-icon">
+
+    <link rel="stylesheet" href='/css/normalize.css'>
+    <link rel="stylesheet" href='/css/style.css'>
+    <script type="text/javascript" src="//cdn.bootcdn.net/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    
+    
+    
+        <link href="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" rel="stylesheet">
+    
+    
+    
+    
+</head>
+
+
+<body>
+    <header id="header" class="clearfix">
+    <div class="container">
+        <div class="col-group">
+            <div class="site-name ">
+                
+                    <a id="logo" href="http://segogt.github.io/">
+                        sakai&#39;s blog
+                    </a>
+                
+                <p class="description">web/java/python/CTF</p>
+            </div>
+            <div>
+                <nav id="nav-menu" class="clearfix">
+                    <a class="current" href="http://segogt.github.io/">首页</a>
+                    
+                    <a  href="http://segogt.github.io/archives/" title="归档">归档</a>
+                    
+                    <a  href="http://segogt.github.io/about/" title="关于">关于</a>
+                    
+                </nav>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <div id="body">
+        <div class="container">
+            <div class="col-group">
+
+                <div class="col-8" id="main">
+                    
+<div class="res-cons">
+    <style type="text/css">
+    .post-toc {
+        position: fixed;
+        width: 200px;
+        margin-left: -210px;
+        padding: 5px 10px;
+        font-family: Athelas, STHeiti, Microsoft Yahei, serif;
+        font-size: 12px;
+        border: 1px solid rgba(0, 0, 0, .07);
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.98);
+        background-clip: padding-box;
+        -webkit-box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        word-wrap: break-word;
+        white-space: nowrap;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        z-index: 999;
+        cursor: pointer;
+        max-height: 70%;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .post-toc .post-toc-title {
+        width: 100%;
+        margin: 0 auto;
+        font-size: 20px;
+        font-weight: 400;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .post-toc .post-toc-content {
+        font-size: 15px;
+    }
+
+    .post-toc .post-toc-content>nav>ul {
+        margin: 10px 0;
+    }
+
+    .post-toc .post-toc-content ul {
+        padding-left: 20px;
+        list-style: square;
+        margin: 0.5em;
+        line-height: 1.8em;
+    }
+
+    .post-toc .post-toc-content ul ul {
+        padding-left: 15px;
+        display: none;
+    }
+
+    @media print,
+    screen and (max-width:1057px) {
+        .post-toc {
+            display: none;
+        }
+    }
+</style>
+<div class="post-toc" style="position: absolute; top: 188px;">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概述">概述</a>
+      <ul>
+        <li><a href="#发生情况">发生情况</a></li>
+        <li><a href="#一般的利用思路">一般的利用思路</a></li>
+      </ul>
+    </li>
+    <li><a href="#步骤">步骤</a>
+      <ul>
+        <li><a href="#寻找堆分配函数">寻找堆分配函数</a></li>
+        <li><a href="#寻找危险的函数">寻找危险的函数</a></li>
+        <li><a href="#确定填充长度">确定填充长度</a></li>
+      </ul>
+    </li>
+    <li><a href="#off-by-one">Off By One</a>
+      <ul>
+        <li><a href="#原理">原理</a></li>
+        <li><a href="#利用思路">利用思路</a></li>
+      </ul>
+    </li>
+    <li><a href="#peda和pwndbg的命令">peda和pwndbg的命令</a>
+      <ul>
+        <li><a href="#peda">peda</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var postToc = $(".post-toc");
+        if (postToc.length) {
+            var leftPos = $("#main").offset().left;
+            if(leftPos<220){
+                postToc.css({"width":leftPos-10,"margin-left":(0-leftPos)})
+            }
+
+            var t = postToc.offset().top - 20,
+                a = {
+                    start: {
+                        position: "absolute",
+                        top: t
+                    },
+                    process: {
+                        position: "fixed",
+                        top: 20
+                    },
+                };
+            $(window).scroll(function () {
+                var e = $(window).scrollTop();
+                e < t ? postToc.css(a.start) : postToc.css(a.process)
+            })
+        }
+    })
+</script>
+    <article class="post">
+        <header>
+            <h1 class="post-title">linux堆笔记(二)——堆相关的数据操作</h1>
+        </header>
+        <date class="post-meta meta-date">
+            2020年1月20日
+        </date>
+        
+        <div class="post-meta">
+            <span>|</span>
+            
+            <span class="meta-category"><a href='/categories/ctf'>ctf</a></span>
+            
+            <span class="meta-category"><a href='/categories/pwn'>pwn</a></span>
+            
+        </div>
+        
+        
+        
+        <div class="clear" style="display: none">
+            <div class="toc-article">
+                <div class="toc-title">文章目录</div>
+            </div>
+        </div>
+        
+        <div class="post-content">
+            <h1 id="堆溢出">堆溢出</h1>
+<h2 id="概述">概述</h2>
+<p>堆溢出指的是程序向某个堆块中写入字节数超过了堆块本身可用字节，因而导致了数据溢出，并覆盖到物理相邻的高地址的下一个堆块。</p>
+<h3 id="发生情况">发生情况</h3>
+<ul>
+<li>程序向堆上写入数据。</li>
+<li>写入的数据大小没有被良好地控制。</li>
+</ul>
+<h3 id="一般的利用思路">一般的利用思路</h3>
+<ol>
+<li>覆盖与其物理相邻的下一个 chunk 的内容。
+<ul>
+<li>prev_size</li>
+<li>size，主要有三个比特位，以及该堆块真正的大小。
+<ul>
+<li>NON_MAIN_ARENA</li>
+<li>IS_MAPPED</li>
+<li>PREV_INUSE</li>
+<li>the True chunk size</li>
+</ul>
+</li>
+<li>chunk content，从而改变程序固有的执行流。</li>
+</ul>
+</li>
+<li>利用堆中的机制（如 unlink 等 ）来实现任意地址写入（ Write-Anything-Anywhere）或控制堆块中的内容等效果，从而来控制程序的执行流。</li>
+</ol>
+<h2 id="步骤">步骤</h2>
+<h3 id="寻找堆分配函数">寻找堆分配函数</h3>
+<p>一般是用malloc,在某些情况下会使用 calloc 分配。calloc 与 malloc 的区别是 calloc 在分配后会自动进行清空，这对于某些信息泄露漏洞的利用来说是致命的。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">calloc(<span style="color:#ae81ff">0x20</span>);
+<span style="color:#75715e">//等同于
+</span><span style="color:#75715e"></span>ptr<span style="color:#f92672">=</span>malloc(<span style="color:#ae81ff">0x20</span>);
+memset(ptr,<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">0x20</span>);
+</code></pre></div><p>还有一个堆分配韩式是realloc,用于重分配chunk大小<br>
+示例程序如下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">void</span>) 
+{
+  <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>chunk,<span style="color:#f92672">*</span>chunk1;
+  chunk<span style="color:#f92672">=</span>malloc(<span style="color:#ae81ff">16</span>);
+  chunk1<span style="color:#f92672">=</span>realloc(chunk,<span style="color:#ae81ff">32</span>);
+  <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>realloc 的操作并不是像字面意义上那么简单，其内部会根据不同的情况进行不同操作</p>
+<ol>
+<li>当 realloc(ptr,size) 的 size 不等于 ptr 的 size 时
+<ul>
+<li>如果申请 size &gt; 原来 size
+<ul>
+<li>如果 chunk 与 top chunk 相邻，直接扩展这个 chunk 到新 size 大小</li>
+<li>如果 chunk 与 top chunk 不相邻，相当于 free(ptr),malloc(new_size)</li>
+</ul>
+</li>
+<li>如果申请 size &lt; 原来 size
+<ul>
+<li>如果相差不足以容得下一个最小 chunk(64 位下 32 个字节，32 位下 16 个字节)，则保持不变</li>
+<li>如果相差可以容得下一个最小 chunk，则切割原 chunk 为两部分，free 掉后一部分</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>当 realloc(ptr,size) 的 size 等于 0 时，相当于 free(ptr)</li>
+<li>当 realloc(ptr,size) 的 size 等于 ptr 的 size，不进行任何操作</li>
+</ol>
+<h3 id="寻找危险的函数">寻找危险的函数</h3>
+<p>常见的有:</p>
+<ol>
+<li>输入
+<ul>
+<li>gets</li>
+<li>scanf</li>
+<li>vscanf</li>
+</ul>
+</li>
+<li>输出
+<ul>
+<li>sprintf</li>
+</ul>
+</li>
+<li>字符串相关的
+<ul>
+<li>strcpy</li>
+<li>strcat</li>
+<li>bcopy</li>
+</ul>
+</li>
+</ol>
+<h3 id="确定填充长度">确定填充长度</h3>
+<p>注意两点:</p>
+<ul>
+<li>分配的实际size是要对齐的(32位8字节对齐，64位16字节对齐)，也就是实际分配的size并不一定等于用户申请的size</li>
+<li>一个chunk可以使用相邻下一个chunk的prev_size字段，所以在64位系统<code>malloc(24)</code>会发现申请的是一个用户数据是16字节的chunk，再加上下一个chunk的prev_size字段共24字节。</li>
+</ul>
+<h2 id="off-by-one">Off By One</h2>
+<h3 id="原理">原理</h3>
+<p>off-by-one 指程序向缓冲区中写入时，写入的字节数超过了这个缓冲区本身所申请的字节数并且只越界了一个字节。</p>
+<h3 id="利用思路">利用思路</h3>
+<ol>
+<li>溢出字节为可控制任意字节：通过修改大小造成块结构之间出现重叠，从而泄露其他块数据，或是覆盖其他块数据。也可使用 NULL 字节溢出的方法</li>
+<li>溢出字节为 NULL 字节：在 size 为 0x100 的时候，溢出 NULL 字节可以使得 prev_in_use 位被清，这样前块会被认为是 free 块。（1） 这时可以选择使用 unlink 方法（见 unlink 部分）进行处理。（2） 另外，这时 prev_size 域就会启用，就可以伪造 prev_size ，从而造成块之间发生重叠。此方法的关键在于 unlink 的时候没有检查按照 prev_size 找到的块的后一块（理论上是当前正在 unlink 的块）与当前正在 unlink 的块大小是否相等。</li>
+</ol>
+<p>最新版本代码中，已加入针对 2 中后一种方法的 check ，但是在 2.28 前并没有该 check 。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">/* consolidate backward */</span>
+    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>prev_inuse(p)) {
+      prevsize <span style="color:#f92672">=</span> prev_size (p);
+      size <span style="color:#f92672">+=</span> prevsize;
+      p <span style="color:#f92672">=</span> chunk_at_offset(p, <span style="color:#f92672">-</span>((<span style="color:#66d9ef">long</span>) prevsize));
+      <span style="color:#75715e">/* 后两行代码在最新版本中加入，则 2 的第二种方法无法使用，但是 2.28 及之前都没有问题 */</span>
+      <span style="color:#66d9ef">if</span> (__glibc_unlikely (chunksize(p) <span style="color:#f92672">!=</span> prevsize))
+        malloc_printerr (<span style="color:#e6db74">&#34;corrupted size vs. prev_size while consolidating&#34;</span>);
+      unlink_chunk (av, p);
+    }
+</code></pre></div><h2 id="peda和pwndbg的命令">peda和pwndbg的命令</h2>
+<h3 id="peda">peda</h3>
+<pre><code>aslr — Show/set ASLR setting of GDB
+asmsearch — Search for ASM instructions in memory
+assemble — On the fly assemble and execute instructions using NASM
+checksec — Check for various security options of binary
+cmpmem — Compare content of a memory region with a file
+context — Display various information of current execution context
+context_code — Display nearby disassembly at $PC of current execution context
+context_register — Display register information of current execution context
+context_stack — Display stack of current execution context
+crashdump — Display crashdump info and save to file
+deactive — Bypass a function by ignoring its execution (eg sleep/alarm)
+distance — Calculate distance between two addresses
+dumpargs — Display arguments passed to a function when stopped at a call instruction
+dumpmem — Dump content of a memory region to raw binary file
+dumprop — Dump all ROP gadgets in specific memory range
+eflags — Display/set/clear/toggle value of eflags register
+elfheader — Get headers information from debugged ELF file
+elfsymbol — Get non-debugging symbol information from an ELF file
+gennop — Generate abitrary length NOP sled using given characters
+getfile — Get exec filename of current debugged process
+getpid — Get PID of current debugged process
+goto — Continue execution at an address
+help — Print the usage manual for PEDA commands
+hexdump — Display hex/ascii dump of data in memory
+hexprint — Display hexified of data in memory
+jmpcall — Search for JMP/CALL instructions in memory
+loadmem — Load contents of a raw binary file to memory
+lookup — Search for all addresses/references to addresses which belong to a memory range
+nearpc — Disassemble instructions nearby current PC or given address
+nextcall — Step until next ‘call’ instruction in specific memory range
+nextjmp — Step until next ‘j*’ instruction in specific memory range
+nxtest — Perform real NX test to see if it is enabled/supported by OS
+patch — Patch memory start at an address with string/hexstring/int
+pattern — Generate, search, or write a cyclic pattern to memory
+pattern_arg — Set argument list with cyclic pattern
+pattern_create — Generate a cyclic pattern
+pattern_env — Set environment variable with a cyclic pattern
+pattern_offset — Search for offset of a value in cyclic pattern
+pattern_patch — Write a cyclic pattern to memory
+pattern_search — Search a cyclic pattern in registers and memory
+payload — Generate various type of ROP payload using ret2plt
+pdisass — Format output of gdb disassemble command with colors
+pltbreak — Set breakpoint at PLT functions match name regex
+procinfo — Display various info from /proc/pid/
+profile — Simple profiling to count executed instructions in the program
+pyhelp — Wrapper for python built-in help
+readelf — Get headers information from an ELF file
+refsearch — Search for all references to a value in memory ranges
+reload — Reload PEDA sources, keep current options untouch
+ropgadget — Get common ROP gadgets of binary or library
+ropsearch — Search for ROP gadgets in memory
+searchmem — Search for a pattern in memory; support regex search
+session — Save/restore a working gdb session to file as a script
+set — Set various PEDA options and other settings
+sgrep — Search for full strings contain the given pattern
+shellcode — Generate or download common shellcodes.
+show — Show various PEDA options and other settings
+skeleton — Generate python exploit code template
+skipi — Skip execution of next count instructions
+snapshot — Save/restore process’s snapshot to/from file
+start — Start debugged program and stop at most convenient entry
+stepuntil — Step until a desired instruction in specific memory range
+strings — Display printable strings in memory
+substr — Search for substrings of a given string/number in memory
+telescope — Display memory content at an address with smart dereferences
+tracecall — Trace function calls made by the program
+traceinst — Trace specific instructions executed by the program
+unptrace — Disable anti-ptrace detection
+utils — Miscelaneous utilities from utils module
+vmmap — Get virtual mapping address ranges of section(s) in debugged process
+waitfor — Try to attach to new forked process; mimic “attach -waitfor”
+xinfo — Display detail information of address/registers
+xormem — XOR a memory region with a key
+xprint — Extra support to GDB’s print command
+xrefs — Search for all call/data access references to a function/variable
+xuntil — Continue execution until an address or function
+</code></pre><pre><code>address              Windbg compatibility alias for 'vmmap' command.
+arena                Prints out the main arena or the arena at the specified by address.
+arenas               Prints out allocated arenas
+argc                 Prints out the number of arguments.
+args                 Prints out the contents of argv.
+argv                 Prints out the contents of argv.
+aslr                 Inspect or modify ASLR status
+auxv                 Print information from the Auxiliary ELF Vector.
+awk                  None
+bash                 None
+bc                   Clear the breapoint with the specified index.
+bd                   Disable the breapoint with the specified index.
+be                   Enable the breapoint with the specified index.
+bins                 Prints out the contents of the fastbins, unsortedbin, smallbins, and largebins from the
+bl                   List breakpoints
+bp                   Set a breakpoint at the specified address.
+canary               Print out the current stack canary.
+cat                  None
+chattr               None
+checksec             Prints out the binary security settings using `checksec`.
+chmod                None
+chown                None
+config               Shows pwndbg-specific configuration points
+configfile           Generates a configuration file for the current Pwndbg options
+context              Print out the current register, instruction, and stack context.
+cp                   None
+cpsr                 Print out ARM CPSR register
+da                   Dump a string at the specified address.
+date                 None
+db                   Starting at the specified address, dump N bytes
+dc                   None
+dd                   Starting at the specified address, dump N dwords
+dds                  Dump pointers and symbols at the specified address.
+diff                 None
+distance             Print the distance between the two arguments
+down                 Select and print stack frame called by this one.
+dps                  Dump pointers and symbols at the specified address.
+dq                   Starting at the specified address, dump N qwords
+dqs                  Dump pointers and symbols at the specified address.
+ds                   Dump a string at the specified address.
+dt                   Dump out information on a type (e.g. ucontext_t).
+dumpargs             Prints determined arguments for call instruction. Pass --all to see all possible arguments.
+dw                   Starting at the specified address, dump N words
+eb                   Write hex bytes at the specified address.
+ed                   Write hex dwords at the specified address.
+egrep                None
+elfheader            Prints the section mappings contained in the ELF header.
+emulate              Like nearpc, but will emulate instructions from the current $PC forward.
+entry                Set a breakpoint at the first instruction executed in
+entry_point          GDBINIT compatibility alias to print the entry point.
+env                  Prints out the contents of the environment.
+environ              Prints out the contents of the environment.
+envp                 Prints out the contents of the environment.
+eq                   Write hex qwords at the specified address.
+errno                Converts errno (or argument) to its string representation.
+ew                   Write hex words at the specified address.
+ez                   Write a string at the specified address.
+eza                  Write a string at the specified address.
+fastbins             Prints out the contents of the fastbins of the main arena or the arena
+find_fake_fast       Finds candidate fake fast chunks that will overlap with the specified
+fsbase               Prints out the FS base address.  See also $fsbase.
+getfile              None
+getpid               None
+go                   Windbg compatibility alias for 'continue' command.
+got                  Show the state of the Global Offset Table
+gotplt               Prints any symbols found in the .got.plt section if it exists.
+grep                 None
+gsbase               Prints out the GS base address.  See also $gsbase.
+heap                 Prints out all chunks in the main_arena, or the arena specified by `addr`.
+hexdump              Hexdumps data at the specified address (or at $sp)
+id                   None
+init                 GDBINIT compatibility alias for 'start' command.
+j                    Synchronize IDA's cursor with GDB
+k                    Print a backtrace (alias 'bt')
+kd                   Dump pointers and symbols at the specified address.
+largebins            Prints out the contents of the large bin of the main arena or the arena
+less                 None
+libs                 GDBINIT compatibility alias for 'libs' command.
+lm                   Windbg compatibility alias for 'vmmap' command.
+ln                   List the symbols nearest to the provided value.
+ls                   None
+main                 GDBINIT compatibility alias for 'main' command.
+malloc_chunk         Prints out the malloc_chunk at the specified address.
+man                  None
+memfrob              memfrob(address, count)
+mkdir                None
+mktemp               None
+more                 None
+mp                   Prints out the mp_ structure from glibc
+mv                   None
+nano                 None
+nc                   None
+nearpc               Disassemble near a specified address.
+next_syscall         Breaks at the next syscall.
+nextcall             Breaks at the next call instruction
+nextjmp              Breaks at the next jump instruction
+nextjump             Breaks at the next jump instruction
+nextproginstr        Breaks at the next instruction that belongs to the running program
+nextret              None
+nextsc               Breaks at the next syscall.
+pc                   Windbg compatibility alias for 'nextcall' command.
+pdisass              Compatibility layer for PEDA's pdisass command
+peb                  None
+pid                  None
+ping                 None
+pkill                None
+plt                  Prints any symbols found in the .plt section if it exists.
+procinfo             Display information about the running process.
+ps                   None
+pstree               None
+pwd                  None
+pwndbg               Prints out a list of all pwndbg commands. The list can be optionally filtered if filter_pattern is passed.
+r2                   .
+regs                 Print out all registers and enhance the information.
+reinit_pwndbg        Makes pwndbg reinitialize all state.
+reload               None
+retaddr              Print out the stack addresses that contain return addresses.
+rm                   None
+rop                  Dump ROP gadgets with Jon Salwan's ROPgadget tool.
+ropgadget            None
+ropper               ROP gadget search with ropper.
+save_ida             Save the IDA database
+search               Search memory for byte sequences, strings, pointers, and integer values
+sed                  None
+sh                   None
+smallbins            Prints out the contents of the small bin of the main arena or the arena
+so                   Alias for stepover
+sort                 None
+ssh                  None
+sstart               GDBINIT compatibility alias for 'tbreak __libc_start_main; run' command.
+stack                dereferences on stack data with specified count and offset
+start                Set a breakpoint at a convenient location in the binary,
+stepover             Sets a breakpoint on the instruction after this one
+sudo                 None
+tail                 None
+telescope            Recursively dereferences pointers starting at the specified address
+theme                Shows pwndbg-specific theme configuration points.
+themefile            Generates a configuration file for the current Pwndbg theme options
+top                  None
+top_chunk            Prints out the address of the top chunk of the main arena, or of the arena
+touch                None
+u                    Starting at the specified address, disassemble
+uniq                 None
+unsortedbin          Prints out the contents of the unsorted bin of the main arena or the
+up                   Select and print stack frame that called this one.
+version              Displays gdb, python and pwndbg versions.
+vi                   None
+vim                  None
+vmmap                Print virtual memory map pages. Results can be filtered by providing address/module name.
+vmmap_add            Add Print virtual memory map page.
+vmmap_clear          None
+vmmap_load           Load virtual memory map pages from ELF file.
+vprot                Windbg compatibility alias for 'vmmap' command.
+w                    None
+wget                 None
+who                  None
+whoami               None
+xinfo                Shows offsets of the specified address to useful other locations
+xor                  xor(address, key, count)
+</code></pre>
+        </div>
+
+        
+<div class="post-archive">
+    <ul class="post-copyright">
+        <li><strong>原文作者：</strong><a rel="author" href="http://segogt.github.io/">sakai</a></li>
+        <li style="word-break:break-all"><strong>原文链接：</strong><a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/">http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/</a></li>
+        <li><strong>版权声明：</strong>本作品采用<a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a>进行许可，非商业转载请注明出处（作者，原文链接），商业转载请联系作者获得授权。</li>
+    </ul>
+</div>
+<br/>
+
+
+
+        
+
+<div class="post-archive">
+    <h2>See Also</h2>
+    <ul class="listing">
+        
+        <li><a href="/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">linux堆笔记(一)——堆相关的数据结构</a></li>
+        
+        <li><a href="/archives/">归档</a></li>
+        
+        <li><a href="/search/">搜索</a></li>
+        
+    </ul>
+</div>
+
+
+        <div class="post-meta meta-tags">
+            
+            <ul class="clearfix">
+                
+                <li><a href='/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%9B%B8%E5%85%B3'>内存分配相关</a></li>
+                
+            </ul>
+            
+        </div>
+    </article>
+    
+    
+
+    
+    
+    <div class="post bg-white">
+      <script src="https://utteranc.es/client.js"
+            repo= "segogt/blog-comments"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+      </script>
+    </div>
+    
+</div>
+
+                    <footer id="footer">
+    <div>
+        &copy; 2021 <a href="http://segogt.github.io/">sakai&#39;s blog By sakai</a>
+        
+    </div>
+    <br />
+    <div>
+        <div class="github-badge">
+            <a href="https://gohugo.io/" target="_black" rel="nofollow"><span class="badge-subject">Powered by</span><span class="badge-value bg-blue">Hugo</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://www.flysnow.org/" target="_black"><span class="badge-subject">Design by</span><span class="badge-value bg-brightgreen">飞雪无情</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://github.com/flysnow-org/maupassant-hugo" target="_black"><span class="badge-subject">Theme</span><span class="badge-value bg-yellowgreen">Maupassant</span></a>
+        </div>
+    </div>
+</footer>
+
+
+    
+    <script type="text/javascript">
+        window.MathJax = {
+            tex2jax: {
+                inlineMath: [['$', '$']],
+                processEscapes: true
+                }
+            };
+    </script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script><script src="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+
+<a id="rocket" href="#top"></a>
+<script type="text/javascript" src='/js/totop.js?v=0.0.0' async=""></script>
+
+
+
+
+
+
+                </div>
+
+                <div id="secondary">
+    <section class="widget">
+        <form id="search" action='http://segogt.github.io/search/' method="get" accept-charset="utf-8" target="_blank" _lpchecked="1">
+      
+      <input type="text" name="q" maxlength="20" placeholder="Search">
+      <input type="hidden" name="sitesearch" value="http://segogt.github.io/">
+      <button type="submit" class="submit icon-search"></button>
+</form>
+    </section>
+    
+    <section class="widget">
+        <h3 class="widget-title">最近文章</h3>
+<ul class="widget-list">
+    
+    <li>
+        <a href="http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/" title="Nodejs中代码执行绕过的一些技巧">Nodejs中代码执行绕过的一些技巧</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/" title="diceCTF2020 Web题解">diceCTF2020 Web题解</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/" title="文件描述符、重定向与反弹shell">文件描述符、重定向与反弹shell</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/" title="ubuntu18.04 编译glibc-2.23">ubuntu18.04 编译glibc-2.23</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/" title="linux堆笔记(二)——堆相关的数据操作">linux堆笔记(二)——堆相关的数据操作</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" title="linux堆笔记(一)——堆相关的数据结构">linux堆笔记(一)——堆相关的数据结构</a>
+    </li>
+    
+</ul>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/categories/'>分类</a></h3>
+<ul class="widget-list">
+    
+    <li><a href="http://segogt.github.io/categories/ctf/">ctf (4)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/pwn/">pwn (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/web/">web (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/%E6%99%AE%E9%80%9A%E7%9A%84linux%E7%9F%A5%E8%AF%86/">普通的linux知识 (2)</a></li>
+    
+</ul>
+    </section>
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/tags/'>标签</a></h3>
+<div class="tagcloud">
+    
+    <a href="http://segogt.github.io/tags/ctf%E9%A2%98%E8%A7%A3/">ctf题解</a>
+    
+    <a href="http://segogt.github.io/tags/linux/">linux</a>
+    
+    <a href="http://segogt.github.io/tags/nodejs/">nodejs</a>
+    
+    <a href="http://segogt.github.io/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%9B%B8%E5%85%B3/">内存分配相关</a>
+    
+</div>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title">其它</h3>
+        <ul class="widget-list">
+            <li><a href="http://segogt.github.io/index.xml">文章 RSS</a></li>
+        </ul>
+    </section>
+</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

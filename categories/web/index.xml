@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>web on sakai&#39;s blog</title>
+    <link>http://segogt.github.io/categories/web/</link>
+    <description>Recent content in web on sakai&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 04 May 2021 14:07:45 +0800</lastBuildDate><atom:link href="http://segogt.github.io/categories/web/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Nodejs中代码执行绕过的一些技巧</title>
+      <link>http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/</link>
+      <pubDate>Tue, 04 May 2021 14:07:45 +0800</pubDate>
+      
+      <guid>http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/</guid>
+      <description>本文已在安全客平台发布，转载，请参考转载声明，注明出处： https://www.anquanke.com/post/id/237032
+ 在php中，eval代码执行是一个已经被玩烂了的话题，各种奇技淫巧用在php代码执行中来实现bypass。这篇文章主要讲一下nodejs中bypass的一些思路。</description>
+    </item>
+    
+    <item>
+      <title>diceCTF2020 Web题解</title>
+      <link>http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/</link>
+      <pubDate>Fri, 19 Feb 2021 15:30:34 +0000</pubDate>
+      
+      <guid>http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/</guid>
+      <description>本文已在安全客平台发布，转载，请参考转载声明，注明出处： https://www.anquanke.com/post/id/231421
+ 前段时间我参加了一场国外的比赛，与国内的web题目以php和python居多不同，感觉国外比赛中考察js尤其nodejs的内容比较多，而这场更是基本都是js题目，觉得有些点比较新奇，这里来分享一下wp。</description>
+    </item>
+    
+  </channel>
+</rss>

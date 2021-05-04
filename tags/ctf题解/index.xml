@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ctf题解 on sakai&#39;s blog</title>
+    <link>http://segogt.github.io/tags/ctf%E9%A2%98%E8%A7%A3/</link>
+    <description>Recent content in ctf题解 on sakai&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Fri, 19 Feb 2021 15:30:34 +0000</lastBuildDate><atom:link href="http://segogt.github.io/tags/ctf%E9%A2%98%E8%A7%A3/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>diceCTF2020 Web题解</title>
+      <link>http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/</link>
+      <pubDate>Fri, 19 Feb 2021 15:30:34 +0000</pubDate>
+      
+      <guid>http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/</guid>
+      <description>本文已在安全客平台发布，转载，请参考转载声明，注明出处： https://www.anquanke.com/post/id/231421
+ 前段时间我参加了一场国外的比赛，与国内的web题目以php和python居多不同，感觉国外比赛中考察js尤其nodejs的内容比较多，而这场更是基本都是js题目，觉得有些点比较新奇，这里来分享一下wp。</description>
+    </item>
+    
+  </channel>
+</rss>

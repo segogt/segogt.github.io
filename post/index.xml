@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on sakai&#39;s blog</title>
+    <link>http://segogt.github.io/post/</link>
+    <description>Recent content in Posts on sakai&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 04 May 2021 14:07:45 +0800</lastBuildDate><atom:link href="http://segogt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Nodejs中代码执行绕过的一些技巧</title>
+      <link>http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/</link>
+      <pubDate>Tue, 04 May 2021 14:07:45 +0800</pubDate>
+      
+      <guid>http://segogt.github.io/post/nodejs%E4%B8%AD%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C%E7%BB%95%E8%BF%87%E7%9A%84%E4%B8%80%E4%BA%9B%E6%8A%80%E5%B7%A7/</guid>
+      <description>本文已在安全客平台发布，转载，请参考转载声明，注明出处： https://www.anquanke.com/post/id/237032
+ 在php中，eval代码执行是一个已经被玩烂了的话题，各种奇技淫巧用在php代码执行中来实现bypass。这篇文章主要讲一下nodejs中bypass的一些思路。</description>
+    </item>
+    
+    <item>
+      <title>diceCTF2020 Web题解</title>
+      <link>http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/</link>
+      <pubDate>Fri, 19 Feb 2021 15:30:34 +0000</pubDate>
+      
+      <guid>http://segogt.github.io/post/%E8%AE%B0%E4%B8%80%E5%9C%BA%E7%BA%AFjs%E8%B5%9Bdicectf2020-web%E9%A2%98%E8%A7%A3/</guid>
+      <description>本文已在安全客平台发布，转载，请参考转载声明，注明出处： https://www.anquanke.com/post/id/231421
+ 前段时间我参加了一场国外的比赛，与国内的web题目以php和python居多不同，感觉国外比赛中考察js尤其nodejs的内容比较多，而这场更是基本都是js题目，觉得有些点比较新奇，这里来分享一下wp。</description>
+    </item>
+    
+    <item>
+      <title>文件描述符、重定向与反弹shell</title>
+      <link>http://segogt.github.io/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/</link>
+      <pubDate>Thu, 20 Aug 2020 10:20:50 +0000</pubDate>
+      
+      <guid>http://segogt.github.io/post/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6%E9%87%8D%E5%AE%9A%E5%90%91%E4%B8%8E%E5%8F%8D%E5%BC%B9shell/</guid>
+      <description>文件描述符 linux文件描述符：可以理解为linux跟踪打开文件，而分配的一个数字，这个数字有点类似c语言操作文件时候的句柄，通过句柄就可以实现文件的读写操作。其中，
+ 0对应stdin，也就是标准输入 1对应stdout，也就是标准输出 2对应stderr，也就是标准错误  重定向 输入重定向 格式: [n]&amp;lt;word</description>
+    </item>
+    
+    <item>
+      <title>ubuntu18.04 编译glibc-2.23</title>
+      <link>http://segogt.github.io/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/</link>
+      <pubDate>Fri, 06 Mar 2020 17:15:25 +0000</pubDate>
+      
+      <guid>http://segogt.github.io/post/ubuntu18-04-%E7%BC%96%E8%AF%91glibc-2-23/</guid>
+      <description>记录一下过程
+ 首先是下载glibc并解压 wget https://ftp.</description>
+    </item>
+    
+    <item>
+      <title>linux堆笔记(二)——堆相关的数据操作</title>
+      <link>http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/</link>
+      <pubDate>Mon, 20 Jan 2020 11:33:58 +0000</pubDate>
+      
+      <guid>http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%BA%8C-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C/</guid>
+      <description>堆溢出 概述 堆溢出指的是程序向某个堆块中写入字节数超过了堆块本身可用字节，因而导致了数据溢出，并覆盖到物理相邻的高地址的下一个堆块。
+发生情况  程序向堆上写入数据。 写入的数据大小没有被良好地控制。  一般的利用思路  覆盖与其物理相邻的下一个 chunk 的内容。  prev_size size，主要有三个比特位，以及该堆块真正的大小。  NON_MAIN_ARENA IS_MAPPED PREV_INUSE the True chunk size   chunk content，从而改变程序固有的执行流。   利用堆中的机制（如 unlink 等 ）来实现任意地址写入（ Write-Anything-Anywhere）或控制堆块中的内容等效果，从而来控制程序的执行流。  步骤 寻找堆分配函数 一般是用malloc,在某些情况下会使用 calloc 分配。calloc 与 malloc 的区别是 calloc 在分配后会自动进行清空，这对于某些信息泄露漏洞的利用来说是致命的。</description>
+    </item>
+    
+    <item>
+      <title>linux堆笔记(一)——堆相关的数据结构</title>
+      <link>http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</link>
+      <pubDate>Sat, 11 Jan 2020 22:44:20 +0000</pubDate>
+      
+      <guid>http://segogt.github.io/post/linux%E5%A0%86%E7%AC%94%E8%AE%B0-%E4%B8%80-%E5%A0%86%E7%9B%B8%E5%85%B3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/</guid>
+      <description>看了ctfwiki上堆相关的部分内容所写笔记。
+ 堆的基本操作 malloc(size_t n)  size_t在32位系统下是4字节，在64位系统上是8字节，size_t是无符号的，所以如果传入一个负数会得到一个很大的数字 当malloc(0)的时候，malloc返回一个最小快，这个块的大小在  32位系统上是16bytes 64位系统上是24或32bytes    free(void* p)  当p为空指针时，free不执行任何操作 当p已经被释放后再次被释放则会出现问题(double free)。  内核中各模块的空间分布图 32系统中的空间分布图如下:    32位解释一下:</description>
+    </item>
+    
+  </channel>
+</rss>
